@@ -8294,6 +8294,7 @@
           "php": "PHP",
           "off": "Off",
           "bundled": "Bundled",
+          "installed": "Installed",
           "notInstalled": "Not installed",
           "manage": "Install or update",
           "install": "Install",

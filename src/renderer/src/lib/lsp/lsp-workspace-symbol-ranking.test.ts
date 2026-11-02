@@ -20,6 +20,13 @@ describe('splitSymbolToken', () => {
     expect(splitSymbolToken('Greeter')).toEqual({ name: 'Greeter', container: null })
   })
 
+  it('splits PHP namespaced names', () => {
+    expect(splitSymbolToken('App\\Service\\Mailer')).toEqual({
+      name: 'Mailer',
+      container: 'App::Service'
+    })
+  })
+
   it('strips trailing ? and ! from names', () => {
     expect(splitSymbolToken('valid?')).toEqual({ name: 'valid', container: null })
     expect(splitSymbolToken('save!')).toEqual({ name: 'save', container: null })
@@ -50,6 +57,14 @@ describe('rankWorkspaceSymbols', () => {
     ])
     expect(rankWorkspaceSymbols('Invoice', candidates, '/repo')).toHaveLength(1)
     expect(candidates[0]).toMatchObject({ line: 0, character: 0 })
+  })
+
+  it('accepts namespaced names from phpactor', () => {
+    const candidates = toWorkspaceSymbolCandidates([
+      sym('App\\Greeter', 5, 'file:///repo/src/Greeter.php')
+    ])
+    expect(rankWorkspaceSymbols('Greeter', candidates, '/repo')).toHaveLength(1)
+    expect(rankWorkspaceSymbols('App\\Greeter', candidates, '/repo')).toHaveLength(1)
   })
 
   it('matches predicates and bang methods by base name', () => {

@@ -63,7 +63,8 @@ export class LspMessageRouter {
 
   constructor(
     private readonly sendToServer: (message: JsonRpcMessage) => void,
-    private readonly workspaceFolders: readonly { uri: string; name: string }[]
+    private readonly workspaceFolders: readonly { uri: string; name: string }[],
+    private readonly workspaceConfiguration: Readonly<Record<string, unknown>> = {}
   ) {}
 
   setServerCapabilities(initializeResult: unknown): void {
@@ -208,7 +209,7 @@ export class LspMessageRouter {
   private replyToServerRequest(id: JsonRpcId, method: string, params: unknown): JsonRpcMessage {
     if (method === 'workspace/configuration') {
       const items = isRecord(params) && Array.isArray(params.items) ? params.items : []
-      return { jsonrpc: '2.0', id, result: items.map(() => null) }
+      return { jsonrpc: '2.0', id, result: items.map((item) => this.configurationFor(item)) }
     }
     if (method === 'workspace/workspaceFolders') {
       return { jsonrpc: '2.0', id, result: this.workspaceFolders }
@@ -217,5 +218,20 @@ export class LspMessageRouter {
       return { jsonrpc: '2.0', id, result: null }
     }
     return errorReply(id, `Unsupported server request: ${method}`)
+  }
+
+  private configurationFor(item: unknown): unknown {
+    const section = isRecord(item) ? item.section : undefined
+    if (typeof section !== 'string') {
+      return null
+    }
+    let value: unknown = this.workspaceConfiguration
+    for (const key of section.split('.')) {
+      if (!isRecord(value) || !Object.hasOwn(value, key)) {
+        return null
+      }
+      value = value[key]
+    }
+    return value
   }
 }

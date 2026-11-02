@@ -7955,6 +7955,7 @@
           "php": "PHP",
           "off": "끔",
           "bundled": "내장",
+          "installed": "설치됨",
           "notInstalled": "설치되지 않음",
           "manage": "설치 또는 업데이트",
           "install": "설치",

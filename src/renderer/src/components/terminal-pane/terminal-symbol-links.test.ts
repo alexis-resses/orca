@@ -46,6 +46,11 @@ describe('extractSymbolTokens', () => {
     expect(line.slice(invoice?.startIndex, invoice?.endIndex)).toBe('Billing::Invoice#charge!')
   })
 
+  it('finds PHP namespaced identifiers', () => {
+    const tokens = extractSymbolTokens('Uncaught Error in App\\Service\\Mailer::send()')
+    expect(tokens.map((t) => t.text)).toContain('App\\Service\\Mailer::send')
+  })
+
   it('skips short tokens and numbers', () => {
     expect(extractSymbolTokens('at 12 go for the x1').map((t) => t.text)).toEqual([])
   })

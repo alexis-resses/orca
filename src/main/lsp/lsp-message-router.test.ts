@@ -61,6 +61,40 @@ describe('LspMessageRouter', () => {
     ).toBeNull()
   })
 
+  it('answers workspace/configuration from the server catalog by section', () => {
+    const toServer: JsonRpcMessage[] = []
+    const router = new LspMessageRouter((m) => toServer.push(m), [], {
+      intelephense: { diagnostics: { enable: false } }
+    })
+    router.fromServer({
+      jsonrpc: '2.0',
+      id: 'c1',
+      method: 'workspace/configuration',
+      params: {
+        items: [
+          { section: 'intelephense' },
+          { section: 'intelephense', scopeUri: 'file:///repo' },
+          { section: 'intelephense.diagnostics' },
+          { section: 'intelephense.diagnostics.enable' },
+          { section: 'intelephense.files' },
+          { section: 'toString' },
+          { section: 'other' },
+          {}
+        ]
+      }
+    })
+    expect(toServer.at(-1)?.result).toEqual([
+      { diagnostics: { enable: false } },
+      { diagnostics: { enable: false } },
+      { enable: false },
+      false,
+      null,
+      null,
+      null,
+      null
+    ])
+  })
+
   it("closes a detached port's documents and forgets its pending requests", () => {
     const { router, toServer } = setup()
     router.fromClient(1, {

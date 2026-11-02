@@ -6,7 +6,7 @@ import {
 } from './lsp-workspace-symbol-ranking'
 
 // Why one language per server family: typescript and javascript share the same session.
-const LOOKUP_LANGUAGES = ['typescript', 'ruby'] as const
+const LOOKUP_LANGUAGES = ['typescript', 'ruby', 'php'] as const
 
 export async function lookupWorkspaceSymbol(
   worktreeId: string,

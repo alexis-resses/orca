@@ -39,6 +39,9 @@ async function probeExternal(
   if (!program) {
     return { status: 'missing' }
   }
+  if (!entry.versionArgs) {
+    return { status: 'installed', version: '' }
+  }
   // Why: cwd = project so version-manager shims answer for the project's Ruby, not the global one.
   const run = await deps
     .run({

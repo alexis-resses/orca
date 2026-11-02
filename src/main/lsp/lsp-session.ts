@@ -7,6 +7,7 @@ import {
   forceTerminateProcessTree,
   signalProcessTree
 } from '@orca/process-host/process-tree-termination'
+import { workspaceConfigurationFor } from '../../shared/language-server-catalog'
 import type { LanguageServerId } from '../../shared/language-server-types'
 import {
   LSP_SEMANTIC_TOKEN_MODIFIERS,
@@ -73,7 +74,8 @@ export class LspSession {
     const writer = new StreamMessageWriter(this.child.stdin)
     this.router = new LspMessageRouter(
       (message) => void writer.write(message).catch(() => undefined),
-      [{ uri: rootUri, name: basename(config.rootPath) }]
+      [{ uri: rootUri, name: basename(config.rootPath) }],
+      workspaceConfigurationFor(config.serverId)
     )
     new StreamMessageReader(this.child.stdout).listen((message) => this.onServerMessage(message))
     this.stderr = new LspStderrTail(this.child.stderr)

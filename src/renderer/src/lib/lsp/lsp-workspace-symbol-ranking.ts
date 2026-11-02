@@ -16,7 +16,7 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 }
 
 export function splitSymbolToken(token: string): { name: string; container: string | null } {
-  const parts = token.replace(/[?!]$/, '').split(/::|#|\./)
+  const parts = token.replace(/[?!]$/, '').split(/::|#|\.|\\/)
   const name = parts.pop() ?? token
   return { name, container: parts.length > 0 ? parts.join('::') : null }
 }
@@ -53,7 +53,7 @@ export function toWorkspaceSymbolCandidates(result: unknown): WorkspaceSymbolCan
 }
 
 function baseName(name: string): string {
-  return (name.split('::').pop() ?? name).replace(/[?!]$/, '')
+  return (name.split(/::|\\/).pop() ?? name).replace(/[?!]$/, '')
 }
 
 function normalizePath(uri: string): string {

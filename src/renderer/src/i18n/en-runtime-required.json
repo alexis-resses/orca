@@ -1453,6 +1453,7 @@
           "installFailed": "Install failed. Check the output above.",
           "installNeedsPosixShell": "Install this server from a POSIX shell such as Git Bash or WSL.",
           "installTitle": "Install {{server}}",
+          "installed": "Installed",
           "localOnly": "Language servers are available for local projects only.",
           "manage": "Install or update",
           "notInstalled": "Not installed",

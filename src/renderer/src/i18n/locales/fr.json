@@ -8107,6 +8107,7 @@
           "php": "PHP",
           "off": "Désactivé",
           "bundled": "Inclus",
+          "installed": "Installé",
           "notInstalled": "Non installé",
           "manage": "Installer ou mettre à jour",
           "install": "Installer",

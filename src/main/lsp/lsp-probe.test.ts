@@ -51,6 +51,24 @@ describe('probeRepoLanguageServers', () => {
     expect(result['ruby-lsp']).toEqual({ status: 'missing' })
   })
 
+  it('reports a server without a version flag as installed once it is on PATH, without running it', async () => {
+    const d = deps({ resolveOnPath: vi.fn(async (name: string) => `/bin/${name}`) })
+    const result = await probeRepoLanguageServers(
+      { ...repo, languageServers: { enabled: { intelephense: true } } },
+      d
+    )
+    expect(result.intelephense).toEqual({ status: 'installed', version: '' })
+    expect(d.run).not.toHaveBeenCalled()
+  })
+
+  it('reports a server without a version flag as missing when it is not on PATH', async () => {
+    const result = await probeRepoLanguageServers(
+      { ...repo, languageServers: { enabled: { intelephense: true } } },
+      deps()
+    )
+    expect(result.intelephense).toEqual({ status: 'missing' })
+  })
+
   it('reports unsupported-host for remote repos without spawning', async () => {
     const d = deps()
     const result = await probeRepoLanguageServers({ ...repo, connectionId: 'ssh-1' }, d)
