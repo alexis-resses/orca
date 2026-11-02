@@ -8281,7 +8281,7 @@
             "solargraph": "solargraph",
             "typescript": "typescript",
             "gemInstall": "gem install",
-            "composerRequire": "composer require",
+            "phar": "phar",
             "php": "php",
             "phpactor": "phpactor",
             "intelephense": "intelephense"
@@ -8302,6 +8302,7 @@
           "installTitle": "Install {{server}}",
           "installAria": "Language server install terminal",
           "installFailed": "Install failed. Check the output above.",
+          "installNeedsPosixShell": "Install this server from a POSIX shell such as Git Bash or WSL.",
           "dismiss": "Dismiss"
         },
         "RepositoryPane": {

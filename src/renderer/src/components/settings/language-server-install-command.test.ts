@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   buildLanguageServerInstallCommand,
+  installAppliesToShell,
   installShellFamily
 } from './language-server-install-command'
 
@@ -64,5 +65,17 @@ describe('buildLanguageServerInstallCommand', () => {
     expect(
       buildLanguageServerInstallCommand('gem install ruby-lsp', 'C:\\code', 'posix', 'wsl')
     ).toBe('gem install ruby-lsp')
+  })
+})
+
+describe('installAppliesToShell', () => {
+  it('applies everywhere when the catalog does not restrict shells', () => {
+    expect(installAppliesToShell(undefined, 'powershell')).toBe(true)
+  })
+
+  it('applies only to the listed shell families', () => {
+    expect(installAppliesToShell(['posix'], 'posix')).toBe(true)
+    expect(installAppliesToShell(['posix'], 'powershell')).toBe(false)
+    expect(installAppliesToShell(['posix'], 'cmd')).toBe(false)
   })
 })

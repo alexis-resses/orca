@@ -1451,6 +1451,7 @@
           "install": "Install",
           "installAria": "Language server install terminal",
           "installFailed": "Install failed. Check the output above.",
+          "installNeedsPosixShell": "Install this server from a POSIX shell such as Git Bash or WSL.",
           "installTitle": "Install {{server}}",
           "localOnly": "Language servers are available for local projects only.",
           "manage": "Install or update",
@@ -1459,7 +1460,6 @@
           "php": "PHP",
           "ruby": "Ruby",
           "search": {
-            "composerRequire": "composer require",
             "findReferences": "find references",
             "gemInstall": "gem install",
             "goToDefinition": "go to definition",
@@ -1467,6 +1467,7 @@
             "intelephense": "intelephense",
             "languageServer": "language server",
             "lsp": "lsp",
+            "phar": "phar",
             "php": "php",
             "phpactor": "phpactor",
             "ruby": "ruby",

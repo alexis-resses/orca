@@ -8115,6 +8115,7 @@
           "installTitle": "Installer {{server}}",
           "installAria": "Terminal d'installation du serveur de langage",
           "installFailed": "L'installation a échoué. Consultez la sortie ci-dessus.",
+          "installNeedsPosixShell": "Installez ce serveur depuis un shell POSIX, comme Git Bash ou WSL.",
           "dismiss": "Ignorer"
         },
         "RepositoryPane": {

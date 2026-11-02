@@ -30,7 +30,7 @@ export function getRepositoryLanguageServersSearchEntries(repo: Repo): SettingsS
         }),
         ...translateSearchKeyword(`${KEY}.search.typescript`, 'typescript', { englishOnly: true }),
         ...translateSearchKeyword(`${KEY}.search.gemInstall`, 'gem install', { englishOnly: true }),
-        ...translateSearchKeyword(`${KEY}.search.composerRequire`, 'composer require', {
+        ...translateSearchKeyword(`${KEY}.search.phar`, 'phar', {
           englishOnly: true
         })
       ]

@@ -7956,6 +7956,7 @@
           "installTitle": "安装 {{server}}",
           "installAria": "语言服务器安装终端",
           "installFailed": "安装失败。请查看上方输出。",
+          "installNeedsPosixShell": "请在 Git Bash 或 WSL 等 POSIX shell 中安装此服务器。",
           "dismiss": "关闭"
         },
         "RepositoryPane": {

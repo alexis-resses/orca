@@ -1,4 +1,5 @@
 import { LANGUAGE_SERVER_IDS } from './language-server-types'
+import type { AgentStartupShell } from './tui-agent-startup-shell'
 import type { LanguageServerId, RepoLanguageServerSettings } from './language-server-types'
 
 type CatalogEntryBase = { label: string; languageIds: readonly string[] }
@@ -10,7 +11,12 @@ export type ExternalLanguageServer = CatalogEntryBase & {
   installCommand: string
   updateCommand: string
   initializationOptions: unknown
+  installShells?: readonly AgentStartupShell[]
 }
+
+// Why: the PHAR needs PHP 8.1+; downloading to a temp file keeps a working binary if an update is cut off.
+const PHPACTOR_PHAR_INSTALL_COMMAND =
+  'mkdir -p ~/.local/bin && curl -fsSL -o ~/.local/bin/phpactor.download https://github.com/phpactor/phpactor/releases/latest/download/phpactor.phar && chmod +x ~/.local/bin/phpactor.download && mv -f ~/.local/bin/phpactor.download ~/.local/bin/phpactor'
 
 export const LANGUAGE_SERVER_CATALOG: Record<
   LanguageServerId,
@@ -74,8 +80,9 @@ export const LANGUAGE_SERVER_CATALOG: Record<
     languageIds: ['php'],
     defaultCommand: ['phpactor', 'language-server'],
     versionArgs: ['--version'],
-    installCommand: 'composer global require phpactor/phpactor',
-    updateCommand: 'composer global update phpactor/phpactor',
+    installCommand: PHPACTOR_PHAR_INSTALL_COMMAND,
+    updateCommand: PHPACTOR_PHAR_INSTALL_COMMAND,
+    installShells: ['posix'],
     initializationOptions: {}
   },
   intelephense: {

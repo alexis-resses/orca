@@ -6,6 +6,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { SettingsRow } from './SettingsFormControls'
 import { LanguageServerInstallPanel } from './LanguageServerInstallPanel'
 import { LanguageServerStatus } from './LanguageServerStatus'
+import { useAppStore } from '@/store'
+import { installAppliesToShell, installShellFamily } from './language-server-install-command'
 import { LANGUAGE_SERVER_CATALOG } from '../../../../shared/language-server-catalog'
 import type {
   LanguageServerId,
@@ -44,6 +46,7 @@ export function LanguageServerChoiceRow({
   onSaveCommand,
   onProbeStale
 }: Props): React.JSX.Element {
+  const windowsShell = useAppStore((s) => s.settings?.terminalWindowsShell)
   const [installing, setInstalling] = useState<InstallRun | null>(null)
   // Why: null means the exit code was unknown; the fresh probe decides whether it worked.
   const [finishedCode, setFinishedCode] = useState<number | null | undefined>(undefined)
@@ -71,6 +74,12 @@ export function LanguageServerChoiceRow({
   const choiceProbe = choice ? probe?.[choice] : undefined
   const choiceEntry = choice ? LANGUAGE_SERVER_CATALOG[choice] : null
   const choiceCommand = choice ? (settings?.command?.[choice]?.join(' ') ?? '') : ''
+  const canManageInstall =
+    choiceEntry?.kind === 'external' &&
+    installAppliesToShell(
+      choiceEntry.installShells,
+      installShellFamily(windowsShell, navigator.userAgent.includes('Windows'))
+    )
   const showInstall =
     installing !== null && !(finishedCode === null && choiceProbe?.status === 'installed')
   const startInstall = (serverId: LanguageServerId, mode: InstallRun['mode']): void => {
@@ -112,26 +121,36 @@ export function LanguageServerChoiceRow({
       />
       {isLocal && choice && choiceEntry?.kind === 'external' && (
         <>
-          {(choiceProbe?.status === 'missing' || choiceProbe?.status === 'installed') && (
-            <SettingsRow
-              label={translate(`${KEY}.manage`, 'Install or update')}
-              control={
-                choiceProbe.status === 'missing' ? (
-                  <Button size="sm" onClick={() => startInstall(choice, 'install')}>
-                    {translate(`${KEY}.install`, 'Install')}
-                  </Button>
-                ) : (
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => startInstall(choice, 'update')}
-                  >
-                    {translate(`${KEY}.update`, 'Update')}
-                  </Button>
-                )
-              }
-            />
-          )}
+          {!canManageInstall &&
+            (choiceProbe?.status === 'missing' || choiceProbe?.status === 'installed') && (
+              <p className="text-muted-foreground text-xs">
+                {translate(
+                  `${KEY}.installNeedsPosixShell`,
+                  'Install this server from a POSIX shell such as Git Bash or WSL.'
+                )}
+              </p>
+            )}
+          {canManageInstall &&
+            (choiceProbe?.status === 'missing' || choiceProbe?.status === 'installed') && (
+              <SettingsRow
+                label={translate(`${KEY}.manage`, 'Install or update')}
+                control={
+                  choiceProbe.status === 'missing' ? (
+                    <Button size="sm" onClick={() => startInstall(choice, 'install')}>
+                      {translate(`${KEY}.install`, 'Install')}
+                    </Button>
+                  ) : (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => startInstall(choice, 'update')}
+                    >
+                      {translate(`${KEY}.update`, 'Update')}
+                    </Button>
+                  )
+                }
+              />
+            )}
           <SettingsRow
             label={translate(`${KEY}.customCommand`, 'Custom command')}
             labelId={commandLabelId}
