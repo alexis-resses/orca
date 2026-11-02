@@ -30,3 +30,26 @@ Ruby a `src/main/lsp/__fixtures__/ruby-project/` et a été vérifié manuelleme
 
 ## Commit
 `test(lsp): PHP fixtures (Composer and legacy) and navigation e2e`
+
+## Notes de sortie
+
+- Fixture legacy `php-legacy-project/` (sans Composer : `index.php`, `lib/functions.php`, `classes/Invoice.php`, `classes/Customer.php`) ; la fixture Composer de T04 est reprise telle quelle. Spec `tests/e2e/lsp-navigation-php.spec.ts` (F12 par serveur et par fixture, survol du docblock) ; mise en place factorisée dans `tests/e2e/helpers/lsp-navigation-fixture.ts` (dépôt git temporaire, activation du serveur, ouverture de fichier), le spec TS l'utilise aussi.
+- e2e : tourne sous WSL (Linux, `ORCA_BACKGROUND_LAUNCH=1`, aucune fenêtre). 7 tests verts (6 PHP + TS). Sans serveur sur le PATH : 6 `skipped`. Le skip teste la présence sur le PATH (pas de `--version`, absent chez Intelephense). Windows natif non testé.
+- Pièges Monaco PHP : les spans englobent l'espace, `->` (parfois `->a->b`) et le `;` final, donc le spec clique à l'offset du token dans le span. Intelephense renvoie 2 définitions sur `new Mailer` (classe + constructeur) : Monaco ouvre un peek, cas non asserté.
+- Tableau legacy × serveur (headless, `index.php`, lignes 1-based dans le fichier cible) :
+
+| Cas | Phpactor 2026.10.07.0 | Intelephense 1.18.5 |
+|---|---|---|
+| Fonction globale `format_amount` (après `require_once`) | résolu : `lib/functions.php:11` | résolu : idem |
+| `new Invoice` (classe sans namespace) | résolu : `Invoice.php:5` | résolu : idem |
+| Constante `define('TAX_RATE')` | résolu : `functions.php:3` | résolu : idem |
+| `->documentedCustomer()` (méthode) | résolu : `Invoice.php:12` | résolu : idem |
+| `->name()` après méthode avec `@return Customer` | résolu : `Customer.php:5` | résolu : idem |
+| `->undocumentedCustomer()` (méthode) | résolu : `Invoice.php:17` | résolu : idem |
+| `->name()` après méthode sans `@return` ni type | non résolu (`null`) | résolu : `Customer.php:5` (infère `new Customer()`) |
+| Appel dynamique `$invoice->$method()` | non résolu vers `total()` (renvoie la ligne de `$method = 'total'`) | idem |
+| Survol `format_amount` / `name` | signature + docblock / signature seule | signature + docblock / signature + `@return` |
+
+- Conclusion : sans docblock, seul Intelephense suit le type de retour ; avec `@return`, les deux serveurs résolvent. Les appels dynamiques sont une limite commune à documenter.
+- À transmettre : un `pnpm test src/main/lsp` a échoué une fois (1 test) pendant que l'e2e tournait en parallèle, vert ensuite (121/121) : probablement un timeout sous charge, à surveiller. Une capture d'écran d'échec Playwright de ce dépôt montre l'écran d'accueil (prise après fermeture), elle ne sert pas au diagnostic.
+- Revue (orchestrateur) : e2e rejoué à la main sous WSL (`ORCA_BACKGROUND_LAUNCH=1`, electron-headless, `--workers=1`) : 7/7 verts en 4,7 min. Le sous-agent n'a pas rendu de rapport final (arrêté) ; fichiers relus et vérifiés directement.
