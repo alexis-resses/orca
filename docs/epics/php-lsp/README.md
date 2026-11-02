@@ -50,9 +50,10 @@ EPIC suivant possible : navigation dans le diff viewer (la PR #24703 n'envoie ja
 | T00b | Signal en amont (MTEKode, issue #5247) | T00 | XS | Sonnet |
 | **Phase 1 — PHP natif** | | | | |
 | T01 | Entrées Phpactor et Intelephense dans le catalogue | T00 | S | Haiku / Sonnet |
+| T01b | Déclarer PHP côté éditeur (synchro + providers) — trou relevé en T06 | T01 | XS | Sonnet |
 | T02 | Écran de réglages générique piloté par le catalogue | T01 | M | Sonnet |
 | T03 | Commandes d'installation / mise à jour des serveurs PHP | T02 | S | Haiku / Sonnet |
-| T04 | Options d'initialisation et performance des serveurs PHP | T01 | M (spike) | Opus |
+| T04 | Options d'initialisation et performance des serveurs PHP | T01b, T03 (catalogue partagé) | M (spike) | Opus |
 | T05 | Projets de test PHP (Composer + legacy sans Composer), tests unitaires et e2e | T01, T04 | M | Sonnet |
 | **Phase 2 — WSL** | | | | |
 | T06 | Spike : comportement actuel d'un repo WSL et conception | T00 | S (spike) | Opus |
@@ -85,7 +86,7 @@ Règles :
 
 ## Avancement
 
-- [ ] T00 · [ ] T00b · [x] T01 · [x] T02 · [ ] T03 · [ ] T04 · [ ] T05
+- [ ] T00 · [ ] T00b · [x] T01 · [ ] T01b · [x] T02 · [ ] T03 · [ ] T04 · [ ] T05
 - [x] T06 · [ ] T07 · [ ] T08 · [ ] T09a · [ ] T09b · [ ] T10 · [ ] T11
 
 ## Définition de fini de l'EPIC
