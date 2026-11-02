@@ -12,6 +12,8 @@ import { getRepoExecutionHostId, LOCAL_EXECUTION_HOST_ID } from '../../shared/ex
 import type { Repo } from '../../shared/repo-types'
 import { runProcess } from '@orca/process-host'
 import type { ProcessResult, ProcessSpec } from '@orca/process-host/process-spec'
+import { parseWslUncPath, type WslUncPathInfo } from '../../shared/wsl-paths'
+import { runWslProcess, type WslResult, type WslSpec } from '../wsl/wsl-runner'
 import { resolveLoginShellEnvironment } from '../startup/login-shell-environment'
 import { resolveCommandOnLocalPath, type ResolveCommandOptions } from '../ipc/command-path-resolver'
 
@@ -19,12 +21,50 @@ export type LspProbeDeps = {
   loginShellEnv: () => Promise<NodeJS.ProcessEnv>
   resolveOnPath: (command: string, options: ResolveCommandOptions) => Promise<string | null>
   run: (spec: ProcessSpec) => Promise<ProcessResult>
+  runWsl: (spec: WslSpec) => Promise<WslResult>
 }
 
 const defaultDeps: LspProbeDeps = {
   loginShellEnv: () => resolveLoginShellEnvironment(),
   resolveOnPath: resolveCommandOnLocalPath,
-  run: runProcess
+  run: runProcess,
+  runWsl: runWslProcess
+}
+
+const WSL_PROBE_TIMEOUT_MS = 10_000
+const PROBE_MAX_OUTPUT_BYTES = 64 * 1024
+
+async function probeExternalInWsl(
+  target: WslUncPathInfo,
+  [name, ...args]: string[],
+  versionArgs: readonly string[] | null,
+  deps: LspProbeDeps
+): Promise<LanguageServerProbe> {
+  if (!name) {
+    return { status: 'missing' }
+  }
+  const base = {
+    distro: target.distro,
+    cwd: target.linuxPath,
+    loginPath: 'preferred',
+    timeoutMs: WSL_PROBE_TIMEOUT_MS,
+    maxOutputBytes: PROBE_MAX_OUTPUT_BYTES
+  } as const
+  const run = await deps
+    .runWsl(
+      versionArgs
+        ? { ...base, program: name, args: [...args, ...versionArgs] }
+        : { ...base, script: 'command -v "$1"', args: [name] }
+    )
+    .catch(() => null)
+  if (!run || run.code !== 0) {
+    return { status: 'missing' }
+  }
+  return { status: 'installed', version: versionArgs ? firstLine(run.stdout) : '' }
+}
+
+function firstLine(stdout: string): string {
+  return stdout.trim().split('\n')[0] ?? ''
 }
 
 async function probeExternal(
@@ -34,6 +74,10 @@ async function probeExternal(
   deps: LspProbeDeps
 ): Promise<LanguageServerProbe> {
   const [name, ...args] = repo.languageServers?.command?.[id] ?? entry.defaultCommand
+  const wslRoot = parseWslUncPath(repo.path)
+  if (wslRoot) {
+    return probeExternalInWsl(wslRoot, [name, ...args], entry.versionArgs, deps)
+  }
   const env = await deps.loginShellEnv()
   const program = name ? await deps.resolveOnPath(name, { env, cwd: repo.path }) : null
   if (!program) {
@@ -56,7 +100,7 @@ async function probeExternal(
   if (!run || run.code !== 0) {
     return { status: 'missing' }
   }
-  return { status: 'installed', version: run.stdout.trim().split('\n')[0] ?? '' }
+  return { status: 'installed', version: firstLine(run.stdout) }
 }
 
 export async function probeRepoLanguageServers(

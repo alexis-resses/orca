@@ -26,3 +26,12 @@ Pour un repo WSL, résoudre la commande du serveur dans la distro, la détecter 
 
 ## Commit
 `feat(lsp): resolve, probe and spawn language servers inside WSL distros`
+
+## Notes de sortie
+
+- Fait : `buildWslSpawnCommand(spec): Promise<WslSpawnCommand>` exporté de `wsl-runner.ts` (`runWslProcess` le réutilise ; retourne aussi `input?` et `environmentResolved`). `resolveLspServerCommand` (external + racine UNC WSL) renvoie `command = { program: wsl.exe, args: ['-d', distro, '--exec', 'sh', '-c', 'cd "$1" || exit 1; shift; exec "$@"', 'orca-wsl', linuxRoot, env, PATH=…, HOME=…, programme, ...args], env, cwd }` (sans l'`env` et PATH/HOME si la sonde du PATH a échoué) et `wsl: { distro, linuxRoot }` (`ResolvedLspServer.wsl`, `undefined` hors WSL et pour TypeScript).
+- T09a : `command.cwd` = cwd **Windows** d'interop (`resolveWslInteropSpawnCwd()`), à utiliser à la place de `config.rootPath` dans `lsp-session.ts:68` (`cwd: config.command.cwd ?? config.rootPath`) ; le spawn reste `spawnProcess` dans `LspSession`, le builder ne spawn rien. `lsp-session-manager.ts:145` doit transmettre `resolved.wsl` ; `processId: null` pour WSL.
+- Pas de contrôle de présence côté WSL dans `resolveLspServerCommand` (natif : `null` si absent) : un binaire absent se voit à la sortie immédiate de `wsl.exe` ; un override en chaîne shell lève une erreur (`assertNotShellString`) au lieu de renvoyer `null`.
+- Sonde WSL (`lsp-probe.ts`, dep `runWsl`) : `[...args, ...versionArgs]` via `runWslProcess` ; `versionArgs: null` → `command -v "$1"` dans la distro (code 0 = `installed`, `version: ''`). Écart : conception muette sur ce cas.
+- Arrêt : rien codé ; un test de `lsp-session.test.ts` vérifie que `dispose` d'une commande portant `cwd` suit le chemin natif (le vrai `wsl.exe` n'est pas testable en CI).
+- Revue (orchestrateur) : garde `if (!name) return null` ajoutée côté WSL ; test de session « WSL-shaped » retiré (le cwd n'était pas encore utilisé par la session et l'assertion était vacuante) → **T09a doit brancher `command.cwd` dans `lsp-session.ts` et le tester**. `spawn.input` volontairement ignoré : le mode stdin n'existe que pour un `script`, jamais pour `program`.
