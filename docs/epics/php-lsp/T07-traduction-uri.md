@@ -24,3 +24,11 @@ Monaco voit `file://wsl.localhost/<distro>/home/...` (ou `file://wsl%24/<distro>
 
 ## Commit
 `feat(lsp): map LSP file URIs between WSL UNC and Linux paths`
+
+## Notes de sortie
+
+- API : `createWslUriMapper(rootPath): WslUriMapper | null` (null hors UNC WSL) ; `WslUriMapper = { toServer(msg), toClient(msg): JsonRpcMessage }`, copie via `structuredClone`, aucune dépendance à `process.platform` ni à `node:url`.
+- T09a : créer le mapper une fois par session avec `rootPath` ; `toServer` enveloppe l'écrivain (`rootUri` de l'`initialize` interne inclus), `toClient` s'applique avant `router.fromServer`. Routeur inchangé. `null` = repo non WSL, ne rien traduire.
+- Écart à la conception : URI construites à la main (`new URL` + encodage par segment) au lieu de `pathToFileURL` / `fileURLToPath` ; vitest tourne sous bun, dont `node:url` ne respecte pas `{ windows }` (`wsl$` non encodé, `D:\` donne `D://`). Résultat identique sous bun et Node 24, `wsl$` donne `wsl%24` comme Monaco.
+- Une URI WSL d'une autre distro, un UNC non WSL, un schéma non `file:` ou une valeur illisible passent inchangés ; `toClient` ne touche pas aux URI ayant une autorité.
+- Couverture de branches non mesurée par l'outil (`@vitest/coverage-v8` absent) : branches vérifiées à la main, 56 tests.

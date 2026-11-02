@@ -87,7 +87,7 @@ Règles :
 ## Avancement
 
 - [ ] T00 · [ ] T00b · [x] T01 · [x] T01b · [x] T02 · [x] T03 · [ ] T04 · [ ] T05
-- [x] T06 · [ ] T07 · [ ] T08 · [ ] T09a · [ ] T09b · [ ] T10 · [ ] T11
+- [x] T06 · [x] T07 · [ ] T08 · [ ] T09a · [ ] T09b · [ ] T10 · [ ] T11
 
 ## Définition de fini de l'EPIC
 
