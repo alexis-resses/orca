@@ -16,6 +16,7 @@ function textModel(uri: string, languageId = 'typescript') {
 }
 
 function setup(client: { request: ReturnType<typeof vi.fn> } | null) {
+  const registeredLanguages: unknown[] = []
   const target = textModel('file:///repo/b.ts')
   const worker = {
     getQuickInfoAtPosition: vi.fn().mockResolvedValue({
@@ -30,7 +31,8 @@ function setup(client: { request: ReturnType<typeof vi.fn> } | null) {
     getReferencesAtPosition: vi.fn().mockResolvedValue([])
   }
   const providers: Record<string, Provider> = {}
-  const register = (name: string) => (_languages: unknown, provider: Provider) => {
+  const register = (name: string) => (languages: unknown, provider: Provider) => {
+    registeredLanguages.push(languages)
     providers[name] = provider
     return { dispose: () => {} }
   }
@@ -57,7 +59,7 @@ function setup(client: { request: ReturnType<typeof vi.fn> } | null) {
     // oxlint-disable-next-line typescript/consistent-type-assertions -- SAFETY: the providers only call clientFor.
     sync as unknown as LspDocumentSync
   )
-  return { providers, worker, target }
+  return { providers, worker, target, registeredLanguages }
 }
 
 describe('registerLspNavigationProviders worker fallback', () => {
@@ -100,5 +102,24 @@ describe('registerLspNavigationProviders worker fallback', () => {
       await providers.hover.provideHover(textModel('file:///repo/a.rb', 'ruby'), position)
     ).toBeNull()
     expect(worker.getQuickInfoAtPosition).not.toHaveBeenCalled()
+  })
+
+  it('registers every provider for php', () => {
+    const { registeredLanguages } = setup(null)
+    expect(registeredLanguages).toHaveLength(3)
+    for (const languages of registeredLanguages) {
+      expect(languages).toContain('php')
+    }
+  })
+
+  it('returns nothing for php without a client on hover, definition and references', async () => {
+    const { providers, worker } = setup(null)
+    const model = textModel('file:///repo/a.php', 'php')
+    expect(await providers.hover.provideHover(model, position)).toBeNull()
+    expect(await providers.definition.provideDefinition(model, position)).toBeNull()
+    expect(await providers.references.provideReferences(model, position, {})).toBeNull()
+    expect(worker.getQuickInfoAtPosition).not.toHaveBeenCalled()
+    expect(worker.getDefinitionAtPosition).not.toHaveBeenCalled()
+    expect(worker.getReferencesAtPosition).not.toHaveBeenCalled()
   })
 })

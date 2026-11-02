@@ -1,7 +1,7 @@
 import type { LspPortClient } from './lsp-port-client'
 import type { OwningWorktree } from './lsp-owning-worktree'
 
-export const LSP_LANGUAGE_IDS = ['typescript', 'javascript', 'ruby'] as const
+export const LSP_LANGUAGE_IDS = ['typescript', 'javascript', 'ruby', 'php'] as const
 
 type Disposable = { dispose(): void }
 export type SyncModel = {
