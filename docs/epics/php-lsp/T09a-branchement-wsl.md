@@ -27,3 +27,12 @@ La session utilise la commande de T08 et le routeur applique le mapper de T07 : 
 
 ## Commit
 `feat(lsp): route WSL language server sessions through the URI mapper`
+
+## Notes de sortie
+
+- Fait : `LspSession` crée le mapper seulement si `config.wsl` (TypeScript intégré sur UNC reste non traduit), applique `toServer` dans l'écrivain du routeur et `toClient` avant `router.fromServer` ; spawn avec `command.cwd ?? rootPath` ; `processId: null` en WSL. `LspSessionManager` transmet `resolved.wsl`. Routeur inchangé.
+- Écart : la racine client vient de `WslUriMapper.clientRootUri` (ajouté) au lieu de `pathToFileURL(rootPath)`, car `node:url` sous bun ne sait pas construire une URI UNC (cf. T07) ; le nom du dossier vient de `win32.basename`. Même forme qu'avant sous Windows, hors encodage de caractères rares.
+- Tests : le faux serveur écrit ce qu'il reçoit (`FAKE_LSP_RECORD`) et répond à `references` / `workspace/symbol` ; une session réelle prouve l'aller-retour definition / references / workspace/symbol, `initialize`, `workspace/workspaceFolders`, `didClose` de `detachPort` et le cwd. Mutations (cwd, processId, toServer, toClient) toutes détectées.
+- T09b : liens `file:///home/...` dans le Markdown du hover non traduits (hors périmètre) ; `initializationOptions` toujours non traduites (chemins Linux attendus). Le vrai `wsl.exe` reste à valider à la main (T10).
+- Hors tâche : `pty-pane-materialization-race`, `pty-launch-race-parity`, `pty-runtime-hidden-at-spawn-mark` (ipc) échouent par intermittence sous charge avec `pnpm test src/main/lsp src/main/ipc`, verts isolés ; sans lien avec le LSP.
+- Revue (orchestrateur) : test WSL rendu déterministe (attend aussi la réponse `workspace/workspaceFolders`, enregistrée de façon asynchrone par le faux serveur). Rejeté : le `cwd` natif ne peut pas changer, `resolveLspServerCommand` ne pose `command.cwd` que dans la branche WSL. Tests pty de `src/main/ipc` instables sous charge, déjà signalés dans la PR #24703.

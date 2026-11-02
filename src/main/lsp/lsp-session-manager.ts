@@ -143,6 +143,7 @@ export class LspSessionManager {
         serverId,
         rootPath,
         command: resolved.command,
+        wsl: resolved.wsl,
         initializationOptions: resolved.initializationOptions,
         idleShutdownMs: this.deps.idleShutdownMs ?? 3 * 60_000,
         onExit: (unexpected) => {

@@ -3,6 +3,7 @@ import { parseWslUncPath, toLinuxPath, toWindowsWslDrivePath } from '../../share
 import type { JsonRpcMessage } from './lsp-message-router'
 
 export type WslUriMapper = {
+  clientRootUri: string
   toServer(message: JsonRpcMessage): JsonRpcMessage
   toClient(message: JsonRpcMessage): JsonRpcMessage
 }
@@ -118,6 +119,7 @@ export function createWslUriMapper(rootPath: string): WslUriMapper | null {
   }
 
   return {
+    clientRootUri: windowsFileUriFor(linuxRoot),
     toServer: (message) => mapMessage(message, SERVER_URI_KEYS, uriToServer),
     toClient: (message) => mapMessage(message, CLIENT_URI_KEYS, uriToClient)
   }
