@@ -14,8 +14,10 @@ vi.mock('../onboarding/OnboardingInlineCommandTerminal', () => ({
     command: string
     prepareCommandForShell: (command: string, shell: string | undefined) => string
     onCommandFinished: (exitCode: number | null) => void
+    cwdOverride?: string
+    shellOverride?: string
   }) => (
-    <div>
+    <div data-cwd={props.cwdOverride} data-shell={props.shellOverride}>
       <pre data-testid="install-terminal">
         {props.prepareCommandForShell(props.command, '/bin/zsh')}
       </pre>
@@ -402,5 +404,71 @@ describe('RepositoryLanguageServersSection', () => {
     await screen.findByText(/not installed/i)
     expect(screen.queryByRole('button', { name: /^install$/i })).toBeNull()
     expect(screen.getByText(/POSIX shell such as Git Bash or WSL/)).toBeTruthy()
+  })
+
+  describe('WSL repository on a Windows host with PowerShell as default shell', () => {
+    const wslRepo: Repo = { ...repo, path: '\\\\wsl.localhost\\Ubuntu\\home\\me\\app' }
+
+    beforeEach(() => {
+      vi.spyOn(navigator, 'userAgent', 'get').mockReturnValue('Windows')
+      useAppStore.setState({
+        // oxlint-disable-next-line typescript/consistent-type-assertions -- SAFETY: the row only reads terminalWindowsShell.
+        settings: { terminalWindowsShell: 'powershell.exe' } as GlobalSettings
+      })
+    })
+
+    it('keeps the settings enabled and shows the Phpactor install button', async () => {
+      window.api.lsp.probe = vi.fn(async () => ({ phpactor: { status: 'missing' as const } }))
+      render(
+        <RepositoryLanguageServersSection
+          repo={{ ...wslRepo, languageServers: { enabled: { phpactor: true } } }}
+          updateRepo={vi.fn()}
+          forceVisible
+          searchQuery=""
+          searchEntries={[]}
+        />
+      )
+      expect(await screen.findByRole('button', { name: /^install$/i })).toBeTruthy()
+      expect(screen.queryByText(/POSIX shell/)).toBeNull()
+      expect(screen.getByRole('combobox', { name: 'PHP' }).hasAttribute('disabled')).toBe(false)
+    })
+
+    it('runs the install in a WSL shell of the repo distro from the Linux folder', async () => {
+      window.api.lsp.probe = vi.fn(async () => ({ phpactor: { status: 'missing' as const } }))
+      render(
+        <RepositoryLanguageServersSection
+          repo={{ ...wslRepo, languageServers: { enabled: { phpactor: true } } }}
+          updateRepo={vi.fn()}
+          forceVisible
+          searchQuery=""
+          searchEntries={[]}
+        />
+      )
+      fireEvent.click(await screen.findByRole('button', { name: /^install$/i }))
+      const terminal = screen.getByTestId('install-terminal')
+      expect(
+        terminal.textContent?.startsWith("cd -- '/home/me/app' && mkdir -p ~/.local/bin")
+      ).toBe(true)
+      expect(terminal.parentElement?.dataset.cwd).toBe(wslRepo.path)
+      expect(terminal.parentElement?.dataset.shell).toBe('wsl.exe')
+    })
+
+    it('leaves a native repository without WSL overrides', async () => {
+      window.api.lsp.probe = vi.fn(async () => ({ 'ruby-lsp': { status: 'missing' as const } }))
+      render(
+        <RepositoryLanguageServersSection
+          repo={{ ...repo, languageServers: { enabled: { 'ruby-lsp': true } } }}
+          updateRepo={vi.fn()}
+          forceVisible
+          searchQuery=""
+          searchEntries={[]}
+        />
+      )
+      fireEvent.click(await screen.findByRole('button', { name: /^install$/i }))
+      const terminal = screen.getByTestId('install-terminal')
+      expect(terminal.parentElement?.dataset.cwd).toBeUndefined()
+      expect(terminal.parentElement?.dataset.shell).toBeUndefined()
+      expect(terminal.textContent?.startsWith("Set-Location -LiteralPath '/repo'; ")).toBe(true)
+    })
   })
 })

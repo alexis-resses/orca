@@ -2,7 +2,8 @@ import { describe, expect, it } from 'vitest'
 import {
   buildLanguageServerInstallCommand,
   installAppliesToShell,
-  installShellFamily
+  installShellFamily,
+  resolveInstallShell
 } from './language-server-install-command'
 
 describe('installShellFamily', () => {
@@ -77,5 +78,23 @@ describe('installAppliesToShell', () => {
     expect(installAppliesToShell(['posix'], 'posix')).toBe(true)
     expect(installAppliesToShell(['posix'], 'powershell')).toBe(false)
     expect(installAppliesToShell(['posix'], 'cmd')).toBe(false)
+  })
+})
+
+describe('WSL repositories', () => {
+  const wslRepo = "\\\\wsl.localhost\\Ubuntu\\home\\me\\it's"
+
+  it('changes into the Linux path whatever the shell family is', () => {
+    for (const family of ['powershell', 'cmd', 'posix'] as const) {
+      expect(
+        buildLanguageServerInstallCommand('composer install', wslRepo, family, 'pwsh.exe')
+      ).toBe("cd -- '/home/me/it'\\''s' && composer install")
+    }
+  })
+
+  it('forces the WSL shell only for WSL repositories', () => {
+    expect(resolveInstallShell(wslRepo, 'powershell.exe')).toBe('wsl.exe')
+    expect(resolveInstallShell('C:\\code', 'powershell.exe')).toBe('powershell.exe')
+    expect(resolveInstallShell('/code', undefined)).toBeUndefined()
   })
 })

@@ -3,6 +3,7 @@ import { translate } from '@/i18n/i18n'
 import { OnboardingInlineCommandTerminal } from '../onboarding/OnboardingInlineCommandTerminal'
 import { LANGUAGE_SERVER_CATALOG } from '../../../../shared/language-server-catalog'
 import type { LanguageServerId } from '../../../../shared/language-server-types'
+import { parseWslUncPath } from '../../../../shared/wsl-paths'
 import {
   buildLanguageServerInstallCommand,
   installShellFamily
@@ -36,6 +37,7 @@ export function LanguageServerInstallPanel({
       ),
     [repoPath, isWindows]
   )
+  const isWslRepo = parseWslUncPath(repoPath) !== null
   if (entry.kind !== 'external') {
     return null
   }
@@ -46,6 +48,9 @@ export function LanguageServerInstallPanel({
       prepareCommandForShell={prepareCommandForShell}
       title={translate(`${KEY}.installTitle`, 'Install {{server}}', { server: entry.label })}
       ariaLabel={translate(`${KEY}.installAria`, 'Language server install terminal')}
+      // Why: a UNC cwd makes the PTY launch wsl.exe in that distro; the tab shell must say WSL too.
+      cwdOverride={isWslRepo ? repoPath : undefined}
+      shellOverride={isWslRepo ? 'wsl.exe' : undefined}
       terminalTopMarginPx={8}
       autoScrollIntoView={false}
       onCommandFinished={onFinished}

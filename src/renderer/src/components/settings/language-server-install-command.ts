@@ -3,6 +3,7 @@ import { resolveWindowsShellStartupFamily } from '../../../../shared/windows-ter
 import { quotePosixShell } from '../../../../shared/wsl-login-shell-command'
 import { quotePowerShellLiteral } from '../../../../shared/powershell-native-argument'
 import { isWslShellName } from '../../../../shared/local-windows-terminal-runtime'
+import { parseWslUncPath } from '../../../../shared/wsl-paths'
 
 export type InstallShellFamily = AgentStartupShell
 
@@ -16,12 +17,24 @@ export function installShellFamily(
   return 'posix'
 }
 
+export function resolveInstallShell(
+  repoPath: string,
+  configuredShell: string | undefined
+): string | undefined {
+  // Why: a WSL repo always installs through its distro's shell, whatever the Windows default is.
+  return parseWslUncPath(repoPath) ? 'wsl.exe' : configuredShell
+}
+
 export function buildLanguageServerInstallCommand(
   command: string,
   projectPath: string,
   family: InstallShellFamily,
   effectiveShell?: string
 ): string {
+  const wslRepo = parseWslUncPath(projectPath)
+  if (wslRepo) {
+    return `cd -- ${quotePosixShell(wslRepo.linuxPath)} && ${command}`
+  }
   if (isWslShellName(effectiveShell)) {
     return command
   }

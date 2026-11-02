@@ -31,6 +31,7 @@ type OnboardingInlineCommandTerminalProps = {
   autoScrollIntoView?: boolean
   worktreeId?: string
   shellOverride?: string
+  cwdOverride?: string
   forceHostRuntime?: boolean
   onOpened?: () => void
   onInteracted?: (method: 'keyboard' | 'pointer', event?: KeyboardEvent<HTMLElement>) => void
@@ -55,6 +56,7 @@ export function OnboardingInlineCommandTerminal({
   autoScrollIntoView = true,
   worktreeId: worktreeIdProp = ONBOARDING_INLINE_TERMINAL_WORKTREE_ID,
   shellOverride,
+  cwdOverride,
   forceHostRuntime = false,
   onOpened,
   onInteracted,
@@ -78,7 +80,8 @@ export function OnboardingInlineCommandTerminal({
       window.matchMedia('(prefers-reduced-motion: reduce)').matches,
     []
   )
-  const [cwd, setCwd] = useState<string | null>(null)
+  const [floatingCwd, setFloatingCwd] = useState<string | null>(null)
+  const cwd = cwdOverride ?? floatingCwd
   const [createdTab, setCreatedTab] = useState<{
     id: string
     shellOverride: string | undefined
@@ -114,16 +117,19 @@ export function OnboardingInlineCommandTerminal({
   }, [onCommandFinished, worktreeId])
 
   useEffect(() => {
+    if (cwdOverride) {
+      return undefined
+    }
     let cancelled = false
     void window.api.app.getFloatingTerminalCwd({ path: '~' }).then((nextCwd) => {
       if (!cancelled) {
-        setCwd(nextCwd)
+        setFloatingCwd(nextCwd)
       }
     })
     return () => {
       cancelled = true
     }
-  }, [])
+  }, [cwdOverride])
 
   useEffect(() => {
     const tab = createTab(worktreeId, undefined, shellOverride, {
