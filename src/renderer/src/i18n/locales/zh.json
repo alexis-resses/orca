@@ -7945,6 +7945,7 @@
           "localOnly": "语言服务器仅适用于本地项目。",
           "typescript": "TypeScript / JavaScript",
           "ruby": "Ruby",
+          "php": "PHP",
           "off": "关闭",
           "bundled": "内置",
           "notInstalled": "未安装",

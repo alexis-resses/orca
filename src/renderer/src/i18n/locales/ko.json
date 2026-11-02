@@ -7952,6 +7952,7 @@
           "localOnly": "언어 서버는 로컬 프로젝트에서만 사용할 수 있습니다.",
           "typescript": "TypeScript / JavaScript",
           "ruby": "Ruby",
+          "php": "PHP",
           "off": "끔",
           "bundled": "내장",
           "notInstalled": "설치되지 않음",

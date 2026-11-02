@@ -18,4 +18,9 @@ describe('language server settings search', () => {
     const entries = getRepositoryPaneSearchEntries(candidate, { isLocalWindowsProject: false })
     expect(entries.some((entry) => entry.keywords?.includes('ruby-lsp'))).toBe(true)
   })
+
+  it.each(['php', 'phpactor', 'intelephense'])('lets "%s" find the repository pane', (keyword) => {
+    const entries = getRepositoryPaneSearchEntries(repo, { isLocalWindowsProject: false })
+    expect(entries.some((entry) => entry.keywords?.includes(keyword))).toBe(true)
+  })
 })

@@ -267,4 +267,76 @@ describe('RepositoryLanguageServersSection', () => {
     fireEvent.blur(input)
     expect(updateRepo).not.toHaveBeenCalled()
   })
+
+  it('lets the user pick Phpactor, switch to Intelephense and turn PHP off', async () => {
+    const user = userEvent.setup()
+    const updateRepo = vi.fn(async () => true)
+    const props = { updateRepo, forceVisible: true, searchQuery: '', searchEntries: [] }
+    const { rerender } = render(<RepositoryLanguageServersSection repo={repo} {...props} />)
+    await user.click(screen.getByRole('combobox', { name: 'PHP' }))
+    await user.click(screen.getByRole('option', { name: 'Phpactor' }))
+    expect(updateRepo).toHaveBeenLastCalledWith('r', {
+      languageServers: { enabled: { phpactor: true, intelephense: false } }
+    })
+
+    rerender(
+      <RepositoryLanguageServersSection
+        repo={{ ...repo, languageServers: { enabled: { phpactor: true } } }}
+        {...props}
+      />
+    )
+    await user.click(screen.getByRole('combobox', { name: 'PHP' }))
+    await user.click(screen.getByRole('option', { name: 'Intelephense' }))
+    expect(updateRepo).toHaveBeenLastCalledWith('r', {
+      languageServers: { enabled: { phpactor: false, intelephense: true } }
+    })
+
+    rerender(
+      <RepositoryLanguageServersSection
+        repo={{ ...repo, languageServers: { enabled: { intelephense: true } } }}
+        {...props}
+      />
+    )
+    await user.click(screen.getByRole('combobox', { name: 'PHP' }))
+    await user.click(screen.getByRole('option', { name: 'Off' }))
+    expect(updateRepo).toHaveBeenLastCalledWith('r', {
+      languageServers: { enabled: { phpactor: false, intelephense: false } }
+    })
+  })
+
+  it('leaves the Ruby choice untouched when PHP changes', async () => {
+    const user = userEvent.setup()
+    const updateRepo = vi.fn(async () => true)
+    render(
+      <RepositoryLanguageServersSection
+        repo={{ ...repo, languageServers: { enabled: { 'ruby-lsp': true } } }}
+        updateRepo={updateRepo}
+        forceVisible
+        searchQuery=""
+        searchEntries={[]}
+      />
+    )
+    await user.click(screen.getByRole('combobox', { name: 'PHP' }))
+    await user.click(screen.getByRole('option', { name: 'Phpactor' }))
+    expect(updateRepo).toHaveBeenLastCalledWith('r', {
+      languageServers: { enabled: { 'ruby-lsp': true, phpactor: true, intelephense: false } }
+    })
+  })
+
+  it('installs the PHP server that is selected', async () => {
+    window.api.lsp.probe = vi.fn(async () => ({ phpactor: { status: 'missing' as const } }))
+    render(
+      <RepositoryLanguageServersSection
+        repo={{ ...repo, languageServers: { enabled: { phpactor: true } } }}
+        updateRepo={vi.fn()}
+        forceVisible
+        searchQuery=""
+        searchEntries={[]}
+      />
+    )
+    fireEvent.click(await screen.findByRole('button', { name: /^install$/i }))
+    expect(screen.getByTestId('install-terminal').textContent).toBe(
+      "cd -- '/repo' && composer global require phpactor/phpactor"
+    )
+  })
 })

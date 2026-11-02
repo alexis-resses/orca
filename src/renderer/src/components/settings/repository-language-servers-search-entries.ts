@@ -23,8 +23,16 @@ export function getRepositoryLanguageServersSearchEntries(repo: Repo): SettingsS
         ...translateSearchKeyword(`${KEY}.search.ruby`, 'ruby', { englishOnly: true }),
         ...translateSearchKeyword(`${KEY}.search.rubyLsp`, 'ruby-lsp', { englishOnly: true }),
         ...translateSearchKeyword(`${KEY}.search.solargraph`, 'solargraph', { englishOnly: true }),
+        ...translateSearchKeyword(`${KEY}.search.php`, 'php', { englishOnly: true }),
+        ...translateSearchKeyword(`${KEY}.search.phpactor`, 'phpactor', { englishOnly: true }),
+        ...translateSearchKeyword(`${KEY}.search.intelephense`, 'intelephense', {
+          englishOnly: true
+        }),
         ...translateSearchKeyword(`${KEY}.search.typescript`, 'typescript', { englishOnly: true }),
-        ...translateSearchKeyword(`${KEY}.search.gemInstall`, 'gem install', { englishOnly: true })
+        ...translateSearchKeyword(`${KEY}.search.gemInstall`, 'gem install', { englishOnly: true }),
+        ...translateSearchKeyword(`${KEY}.search.composerRequire`, 'composer require', {
+          englishOnly: true
+        })
       ]
     }
   ]

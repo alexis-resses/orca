@@ -7960,6 +7960,7 @@
           "localOnly": "Los servidores de lenguaje solo están disponibles para proyectos locales.",
           "typescript": "TypeScript / JavaScript",
           "ruby": "Ruby",
+          "php": "PHP",
           "off": "Desactivado",
           "bundled": "Incluido",
           "notInstalled": "No instalado",

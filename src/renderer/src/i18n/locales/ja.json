@@ -7982,6 +7982,7 @@
           "localOnly": "言語サーバーはローカルプロジェクトでのみ利用できます。",
           "typescript": "TypeScript / JavaScript",
           "ruby": "Ruby",
+          "php": "PHP",
           "off": "オフ",
           "bundled": "同梱",
           "notInstalled": "未インストール",

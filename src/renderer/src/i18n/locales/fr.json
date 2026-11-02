@@ -8104,6 +8104,7 @@
           "localOnly": "Les serveurs de langage ne sont disponibles que pour les projets locaux.",
           "typescript": "TypeScript / JavaScript",
           "ruby": "Ruby",
+          "php": "PHP",
           "off": "Désactivé",
           "bundled": "Inclus",
           "notInstalled": "Non installé",
