@@ -4,7 +4,7 @@ Suite du commentaire 6575375881 (T00b). Constats vérifiés le 2026-11-02 : PR `
 
 ---
 
-```markdown
+````markdown
 Hi @MTEKode, a quick follow-up on my earlier comment.
 
 The PHP and WSL work is done on my fork, built on top of this PR's head (`215cbee`):
@@ -29,4 +29,4 @@ While running the full checks I noticed two things on this PR, in case they help
    (The other full-lint failure I saw, the focus-read ratchet in `worktree-creation-ready-toast.tsx`, is unrelated to this PR.)
 
 Unless you'd prefer otherwise, I'll open the PHP PR against `main` as a **draft stacked on this one** around November 9, clearly marked "review only the commits after `215cbee`", and rebase it once this PR merges. If you'd rather take it as a PR against your branch, or want me to hold off, just say so.
-```
+````
