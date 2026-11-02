@@ -1,4 +1,10 @@
-export const LANGUAGE_SERVER_IDS = ['typescript', 'ruby-lsp', 'solargraph'] as const
+export const LANGUAGE_SERVER_IDS = [
+  'typescript',
+  'ruby-lsp',
+  'solargraph',
+  'phpactor',
+  'intelephense'
+] as const
 export type LanguageServerId = (typeof LANGUAGE_SERVER_IDS)[number]
 
 export type RepoLanguageServerSettings = {

@@ -23,6 +23,34 @@ describe('normalizeRepoLanguageServerSettings', () => {
     ).toEqual({ enabled: { 'ruby-lsp': true, solargraph: false } })
   })
 
+  it('keeps a lone PHP server enabled', () => {
+    expect(normalizeRepoLanguageServerSettings({ enabled: { intelephense: true } })).toEqual({
+      enabled: { intelephense: true }
+    })
+  })
+
+  it('allows only one enabled PHP server, phpactor first', () => {
+    expect(
+      normalizeRepoLanguageServerSettings({ enabled: { intelephense: true, phpactor: true } })
+    ).toEqual({ enabled: { phpactor: true, intelephense: false } })
+  })
+
+  it('accepts command overrides for both PHP servers', () => {
+    expect(
+      normalizeRepoLanguageServerSettings({
+        command: {
+          phpactor: ['/opt/phpactor/bin/phpactor', 'language-server'],
+          intelephense: ['npx', 'intelephense', '--stdio']
+        }
+      })
+    ).toEqual({
+      command: {
+        phpactor: ['/opt/phpactor/bin/phpactor', 'language-server'],
+        intelephense: ['npx', 'intelephense', '--stdio']
+      }
+    })
+  })
+
   it('keeps valid argv for external servers only', () => {
     expect(
       normalizeRepoLanguageServerSettings({
@@ -49,6 +77,9 @@ describe('enabledServerForLanguage', () => {
     const settings = { enabled: { typescript: true, solargraph: true } }
     expect(enabledServerForLanguage(settings, 'javascript')).toBe('typescript')
     expect(enabledServerForLanguage(settings, 'ruby')).toBe('solargraph')
+    expect(enabledServerForLanguage({ enabled: { intelephense: true } }, 'php')).toBe(
+      'intelephense'
+    )
     expect(enabledServerForLanguage(settings, 'python')).toBeNull()
     expect(enabledServerForLanguage(undefined, 'ruby')).toBeNull()
   })
