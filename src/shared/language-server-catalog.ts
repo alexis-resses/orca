@@ -7,10 +7,12 @@ export type BundledLanguageServer = CatalogEntryBase & { kind: 'bundled' }
 export type ExternalLanguageServer = CatalogEntryBase & {
   kind: 'external'
   defaultCommand: readonly string[]
-  versionArgs: readonly string[]
+  /** null: the server has no version flag, so being on PATH is the only check. */
+  versionArgs: readonly string[] | null
   installCommand: string
   updateCommand: string
   initializationOptions: unknown
+  workspaceConfiguration?: Readonly<Record<string, unknown>>
   installShells?: readonly AgentStartupShell[]
 }
 
@@ -83,17 +85,64 @@ export const LANGUAGE_SERVER_CATALOG: Record<
     installCommand: PHPACTOR_PHAR_INSTALL_COMMAND,
     updateCommand: PHPACTOR_PHAR_INSTALL_COMMAND,
     installShells: ['posix'],
-    initializationOptions: {}
+    // Why: set explicitly so a user-level phpactor.json cannot turn analysers back on for navigation.
+    initializationOptions: {
+      'language_server_phpstan.enabled': false,
+      'language_server_psalm.enabled': false,
+      'language_server_php_cs_fixer.enabled': false,
+      'language_server_mago.enabled': false,
+      'php_code_sniffer.enabled': false,
+      'language_server.diagnostics_on_open': false,
+      'language_server.diagnostics_on_update': false,
+      'language_server.diagnostics_on_save': false,
+      'language_server_worse_reflection.diagnostics.enable': false,
+      // Why: replaces the defaults (first four), so they are repeated; var/cache holds Symfony duplicates.
+      'indexer.exclude_patterns': [
+        '/vendor/**/Tests/**/*',
+        '/vendor/**/tests/**/*',
+        '/vendor/composer/**/*',
+        '/vendor/rector/rector/stubs-rector',
+        '/var/cache/**/*',
+        '/var/log/**/*',
+        '/node_modules/**/*'
+      ]
+    }
   },
   intelephense: {
     kind: 'external',
     label: 'Intelephense',
     languageIds: ['php'],
     defaultCommand: ['intelephense', '--stdio'],
-    versionArgs: ['--version'],
+    // Why: `intelephense --version` does not exist; it starts the server and exits 1 without a client.
+    versionArgs: null,
     installCommand: 'npm install -g intelephense',
     updateCommand: 'npm update -g intelephense',
-    initializationOptions: {}
+    // Why: storage and licence stay at Intelephense's per-user defaults; never ship a licence key.
+    initializationOptions: {},
+    // Why: Intelephense reads its settings from workspace/configuration only, not initializationOptions.
+    workspaceConfiguration: {
+      intelephense: {
+        diagnostics: { enable: false },
+        telemetry: { enabled: false },
+        // Why: replaces the defaults (first ten), so they are repeated; var/cache holds Symfony duplicates.
+        files: {
+          exclude: [
+            '**/.git/**',
+            '**/.svn/**',
+            '**/.hg/**',
+            '**/CVS/**',
+            '**/.DS_Store/**',
+            '**/node_modules/**',
+            '**/bower_components/**',
+            '**/vendor/**/{Tests,tests}/**',
+            '**/.history/**',
+            '**/vendor/**/vendor/**',
+            '**/var/cache/**',
+            '**/var/log/**'
+          ]
+        }
+      }
+    }
   }
 }
 
@@ -107,4 +156,9 @@ export function enabledServerForLanguage(
     }
   }
   return null
+}
+
+export function workspaceConfigurationFor(id: LanguageServerId): Readonly<Record<string, unknown>> {
+  const entry = LANGUAGE_SERVER_CATALOG[id]
+  return entry.kind === 'external' ? (entry.workspaceConfiguration ?? {}) : {}
 }

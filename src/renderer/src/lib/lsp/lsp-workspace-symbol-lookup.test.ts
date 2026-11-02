@@ -25,4 +25,26 @@ describe('lookupWorkspaceSymbol', () => {
       Math.max(...request.mock.invocationCallOrder)
     )
   })
+
+  it('also queries the PHP server and merges its symbols', async () => {
+    const symbol = {
+      name: 'Greeter',
+      kind: 5,
+      location: { uri: 'file:///repo/src/Greeter.php', range: { start: { line: 6, character: 0 } } }
+    }
+    opener.getLspClient.mockImplementation(async (_worktreeId: string, languageId: string) => ({
+      request: vi.fn().mockResolvedValue(languageId === 'php' ? [symbol] : [])
+    }))
+    expect(await lookupWorkspaceSymbol('wt', 'Greeter')).toEqual([
+      {
+        name: 'Greeter',
+        kind: 5,
+        containerName: null,
+        uri: 'file:///repo/src/Greeter.php',
+        line: 6,
+        character: 0
+      }
+    ])
+    expect(opener.getLspClient).toHaveBeenCalledWith('wt', 'php')
+  })
 })

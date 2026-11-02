@@ -7985,6 +7985,7 @@
           "php": "PHP",
           "off": "オフ",
           "bundled": "同梱",
+          "installed": "インストール済み",
           "notInstalled": "未インストール",
           "manage": "インストールまたは更新",
           "install": "インストール",

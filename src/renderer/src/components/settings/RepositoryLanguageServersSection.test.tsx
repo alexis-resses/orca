@@ -130,6 +130,23 @@ describe('RepositoryLanguageServersSection', () => {
     expect(await screen.findByText('Not installed')).toBeTruthy()
   })
 
+  it('shows Installed for a server whose probe has no version', async () => {
+    window.api.lsp.probe = vi.fn(async () => ({
+      intelephense: { status: 'installed' as const, version: '' }
+    }))
+    const enabled: Repo = { ...repo, languageServers: { enabled: { intelephense: true } } }
+    render(
+      <RepositoryLanguageServersSection
+        repo={enabled}
+        updateRepo={vi.fn()}
+        forceVisible
+        searchQuery=""
+        searchEntries={[]}
+      />
+    )
+    expect(await screen.findByText('Installed')).toBeTruthy()
+  })
+
   it('re-probes when the enabled server changes', async () => {
     const props = { updateRepo: vi.fn(), forceVisible: true, searchQuery: '', searchEntries: [] }
     const { rerender } = render(<RepositoryLanguageServersSection repo={repo} {...props} />)

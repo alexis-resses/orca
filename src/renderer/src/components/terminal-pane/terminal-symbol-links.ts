@@ -12,7 +12,7 @@ import { getRepoExecutionHostId, LOCAL_EXECUTION_HOST_ID } from '../../../../sha
 import type { Repo } from '../../../../shared/repo-types'
 import { buildWrappedLogicalLine, rangeForParsedFileLink } from './wrapped-terminal-link-ranges'
 
-const SYMBOL_TOKEN = /[A-Za-z_][A-Za-z0-9_]*(?:(?:::|#|\.)[A-Za-z_][A-Za-z0-9_]*)*[?!]?/g
+const SYMBOL_TOKEN = /[A-Za-z_][A-Za-z0-9_]*(?:(?:::|#|\.|\\)[A-Za-z_][A-Za-z0-9_]*)*[?!]?/g
 // ponytail: skips prose words like "for"/"the"; lower it if 3-letter symbols matter.
 const MIN_TOKEN_LENGTH = 4
 

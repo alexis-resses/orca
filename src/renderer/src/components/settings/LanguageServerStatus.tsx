@@ -16,7 +16,9 @@ export function LanguageServerStatus({
     case 'bundled':
       return <SettingsBadge>{translate(`${KEY}.bundled`, 'Bundled')}</SettingsBadge>
     case 'installed':
-      return <SettingsBadge>{probe.version}</SettingsBadge>
+      return (
+        <SettingsBadge>{probe.version || translate(`${KEY}.installed`, 'Installed')}</SettingsBadge>
+      )
     case 'missing':
       return (
         <SettingsBadge tone="muted">

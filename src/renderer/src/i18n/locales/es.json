@@ -7963,6 +7963,7 @@
           "php": "PHP",
           "off": "Desactivado",
           "bundled": "Incluido",
+          "installed": "Instalado",
           "notInstalled": "No instalado",
           "manage": "Instalar o actualizar",
           "install": "Instalar",
