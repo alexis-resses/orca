@@ -1,8 +1,11 @@
-import { mkdirSync, mkdtempSync, realpathSync, rmSync, writeFileSync } from 'node:fs'
-import os from 'node:os'
+import { mkdirSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
-import { runProcess } from '@orca/process-host'
 import { test as base, expect } from './helpers/orca-app'
+import {
+  enableLanguageServer,
+  openActiveWorktreeFile,
+  provideCommittedFixtureRepo
+} from './helpers/lsp-navigation-fixture'
 import { waitForActiveWorktree, waitForSessionReady } from './helpers/store'
 
 const SCREENS_DIR = process.env.ORCA_E2E_LSP_SCREENS_DIR
@@ -36,35 +39,17 @@ const FIXTURE_FILES: [string, string][] = [
   ]
 ]
 
-async function git(cwd: string, args: string[]): Promise<void> {
-  const result = await runProcess({ program: 'git', args, cwd })
-  if (result.code !== 0) {
-    throw new Error(result.stderr)
-  }
-}
-
 const test = base.extend({
   minimumSeededWorktreeCount: 1,
   // oxlint-disable-next-line no-empty-pattern -- Playwright fixture callbacks require object destructuring here.
   seededRepoPath: async ({}, provideFixture) => {
-    // Why: realpath so the worktree path and server-reported URIs agree on macOS /var -> /private/var.
-    const fixtureRoot = realpathSync(mkdtempSync(path.join(os.tmpdir(), 'orca-lsp-nav-')))
-    const repo = path.join(fixtureRoot, 'repo')
-    for (const [name, content] of FIXTURE_FILES) {
-      const file = path.join(repo, name)
-      mkdirSync(path.dirname(file), { recursive: true })
-      writeFileSync(file, content)
-    }
-    await git(repo, ['init', '-q', '-b', 'main'])
-    await git(repo, ['config', 'user.email', 'lsp-nav@example.invalid'])
-    await git(repo, ['config', 'user.name', 'LSP nav'])
-    await git(repo, ['add', '.'])
-    await git(repo, ['commit', '-q', '-m', 'LSP fixture'])
-    try {
-      await provideFixture(repo)
-    } finally {
-      rmSync(fixtureRoot, { recursive: true, force: true })
-    }
+    await provideCommittedFixtureRepo((repo) => {
+      for (const [name, content] of FIXTURE_FILES) {
+        const file = path.join(repo, name)
+        mkdirSync(path.dirname(file), { recursive: true })
+        writeFileSync(file, content)
+      }
+    }, provideFixture)
   }
 })
 
@@ -72,36 +57,8 @@ test('TypeScript language server provides hover and go-to-definition', async ({ 
   await waitForSessionReady(orcaPage)
   await waitForActiveWorktree(orcaPage)
 
-  // Why: enable before opening a file; the renderer caches an open refusal for a few seconds.
-  const enabled = await orcaPage.evaluate(async () => {
-    const state = window.__store!.getState()
-    const worktree = Object.values(state.worktreesByRepo)
-      .flat()
-      .find((entry) => entry.id === state.activeWorktreeId)!
-    return state.updateRepo(worktree.repoId, {
-      languageServers: { enabled: { typescript: true } }
-    })
-  })
-  expect(enabled).not.toBe(false)
-
-  await orcaPage.evaluate(() => {
-    const state = window.__store!.getState()
-    const worktreeId = state.activeWorktreeId!
-    const worktree = Object.values(state.worktreesByRepo)
-      .flat()
-      .find((entry) => entry.id === worktreeId)!
-    const separator = worktree.path.includes('\\') ? '\\' : '/'
-    state.openFile({
-      filePath: [worktree.path, 'src', 'app.ts'].join(separator),
-      relativePath: 'src/app.ts',
-      worktreeId,
-      language: 'typescript',
-      mode: 'edit'
-    })
-  })
-  await expect(orcaPage.locator('.editor-header-path').first()).toContainText('app.ts', {
-    timeout: 20_000
-  })
+  await enableLanguageServer(orcaPage, 'typescript')
+  await openActiveWorktreeFile(orcaPage, 'src/app.ts', 'typescript')
 
   const usage = orcaPage
     .locator('.monaco-editor:visible .view-line')
