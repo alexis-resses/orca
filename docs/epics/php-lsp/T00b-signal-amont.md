@@ -24,4 +24,5 @@ README de l'EPIC (sections « Décisions » et « Constats »), `AGENTS.md` (sec
 
 - Deux textes prêts dans `T00b-messages.md` (anglais, courts, sans délai promis), à publier par Alexis.
 - Contradiction relevée : la description de la PR #24703 annonce `unsupported-host` pour WSL, mais le code (`lsp-probe.ts:63`, `lsp-session-manager.ts:64`) ne teste que `getRepoExecutionHostId(repo) !== 'local'`, et `execution-host.ts` n'a que les types `local` / `ssh` / `runtime` (WSL = `local` + `wslDistro`). Posée comme question à MTEKode ; le comportement réel reste à constater en T06.
-- **En attente** : publication, puis résumé des réponses ici ; mettre à jour le README si une décision change (D6 notamment : PR sur sa branche ou après fusion).
+- Publiés le 2026-11-02 : [PR #24703](https://github.com/stablyai/orca/pull/24703#issuecomment-6575375881), [issue #5247](https://github.com/stablyai/orca/issues/5247#issuecomment-6575376317).
+- **En attente** : résumé des réponses ici ; mettre à jour le README si une décision change (D6 notamment : PR sur sa branche ou après fusion).
