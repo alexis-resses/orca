@@ -42,7 +42,7 @@ export function LanguageServerInstallPanel({
   return (
     <OnboardingInlineCommandTerminal
       command={mode === 'install' ? entry.installCommand : entry.updateCommand}
-      // Why: the inline terminal starts in ~, but version-manager shims must see the project's .ruby-version.
+      // Why: the inline terminal starts in ~, but version-manager shims must see the project's version file.
       prepareCommandForShell={prepareCommandForShell}
       title={translate(`${KEY}.installTitle`, 'Install {{server}}', { server: entry.label })}
       ariaLabel={translate(`${KEY}.installAria`, 'Language server install terminal')}

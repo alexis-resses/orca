@@ -7963,6 +7963,7 @@
           "installTitle": "{{server}} 설치",
           "installAria": "언어 서버 설치 터미널",
           "installFailed": "설치에 실패했습니다. 위의 출력을 확인하세요.",
+          "installNeedsPosixShell": "이 서버는 Git Bash나 WSL 같은 POSIX 셸에서 설치하세요.",
           "dismiss": "닫기"
         },
         "RepositoryPane": {

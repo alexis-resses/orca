@@ -2,8 +2,10 @@
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import type { GlobalSettings } from '../../../../shared/global-settings-types'
 import type { Repo } from '../../../../shared/repo-types'
 import { resetLspClients } from '@/lib/lsp/lsp-session-opener'
+import { useAppStore } from '@/store'
 import { RepositoryLanguageServersSection } from './RepositoryLanguageServersSection'
 
 vi.mock('@/lib/lsp/lsp-session-opener', () => ({ resetLspClients: vi.fn() }))
@@ -45,7 +47,11 @@ describe('RepositoryLanguageServersSection', () => {
       }
     })
   })
-  afterEach(cleanup)
+  afterEach(() => {
+    cleanup()
+    vi.restoreAllMocks()
+    useAppStore.setState({ settings: null })
+  })
 
   it('enables the TypeScript server for this project only', async () => {
     const updateRepo = vi.fn(async () => true)
@@ -336,7 +342,48 @@ describe('RepositoryLanguageServersSection', () => {
     )
     fireEvent.click(await screen.findByRole('button', { name: /^install$/i }))
     expect(screen.getByTestId('install-terminal').textContent).toBe(
-      "cd -- '/repo' && composer global require phpactor/phpactor"
+      "cd -- '/repo' && mkdir -p ~/.local/bin && curl -fsSL -o ~/.local/bin/phpactor.download https://github.com/phpactor/phpactor/releases/latest/download/phpactor.phar && chmod +x ~/.local/bin/phpactor.download && mv -f ~/.local/bin/phpactor.download ~/.local/bin/phpactor"
     )
+  })
+
+  it('keeps the Ruby install button in a Windows PowerShell terminal', async () => {
+    window.api.lsp.probe = vi.fn(async () => ({ 'ruby-lsp': { status: 'missing' as const } }))
+    vi.spyOn(navigator, 'userAgent', 'get').mockReturnValue('Windows')
+    useAppStore.setState({
+      // oxlint-disable-next-line typescript/consistent-type-assertions -- SAFETY: the row only reads terminalWindowsShell.
+      settings: { terminalWindowsShell: 'powershell.exe' } as GlobalSettings
+    })
+    render(
+      <RepositoryLanguageServersSection
+        repo={{ ...repo, languageServers: { enabled: { 'ruby-lsp': true } } }}
+        updateRepo={vi.fn()}
+        forceVisible
+        searchQuery=""
+        searchEntries={[]}
+      />
+    )
+    expect(await screen.findByRole('button', { name: /^install$/i })).toBeTruthy()
+    expect(screen.queryByText(/POSIX shell/)).toBeNull()
+  })
+
+  it('hides the Phpactor install button in a Windows PowerShell terminal', async () => {
+    window.api.lsp.probe = vi.fn(async () => ({ phpactor: { status: 'missing' as const } }))
+    vi.spyOn(navigator, 'userAgent', 'get').mockReturnValue('Windows')
+    useAppStore.setState({
+      // oxlint-disable-next-line typescript/consistent-type-assertions -- SAFETY: the row only reads terminalWindowsShell.
+      settings: { terminalWindowsShell: 'powershell.exe' } as GlobalSettings
+    })
+    render(
+      <RepositoryLanguageServersSection
+        repo={{ ...repo, languageServers: { enabled: { phpactor: true } } }}
+        updateRepo={vi.fn()}
+        forceVisible
+        searchQuery=""
+        searchEntries={[]}
+      />
+    )
+    await screen.findByText(/not installed/i)
+    expect(screen.queryByRole('button', { name: /^install$/i })).toBeNull()
+    expect(screen.getByText(/POSIX shell such as Git Bash or WSL/)).toBeTruthy()
   })
 })

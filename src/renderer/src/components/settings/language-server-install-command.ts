@@ -41,3 +41,10 @@ export function buildLanguageServerInstallCommand(
       return `cd -- ${quotePosixShell(projectPath)} && ${command}`
   }
 }
+
+export function installAppliesToShell(
+  installShells: readonly InstallShellFamily[] | undefined,
+  family: InstallShellFamily
+): boolean {
+  return installShells === undefined || installShells.includes(family)
+}
