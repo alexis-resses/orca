@@ -67,6 +67,26 @@ export const LANGUAGE_SERVER_CATALOG: Record<
       formatting: false,
       autoformat: false
     }
+  },
+  phpactor: {
+    kind: 'external',
+    label: 'Phpactor',
+    languageIds: ['php'],
+    defaultCommand: ['phpactor', 'language-server'],
+    versionArgs: ['--version'],
+    installCommand: 'composer global require phpactor/phpactor',
+    updateCommand: 'composer global update phpactor/phpactor',
+    initializationOptions: {}
+  },
+  intelephense: {
+    kind: 'external',
+    label: 'Intelephense',
+    languageIds: ['php'],
+    defaultCommand: ['intelephense', '--stdio'],
+    versionArgs: ['--version'],
+    installCommand: 'npm install -g intelephense',
+    updateCommand: 'npm update -g intelephense',
+    initializationOptions: {}
   }
 }
 

@@ -28,3 +28,10 @@ Catalogue déclaratif, un seul serveur par langage, l'ordre de `LANGUAGE_SERVER_
 
 ## Commit
 `feat(lsp): add Phpactor and Intelephense to the language server catalog`
+
+## Notes de sortie
+- Fait : `phpactor` puis `intelephense` ajoutés à `LANGUAGE_SERVER_IDS` et au catalogue (`languageIds: ['php']`) ; 3 tests ajoutés dans `repo-language-server-settings.test.ts` (PHP seul, conflit phpactor gagnant, overrides de commande) + cas `enabledServerForLanguage` pour `php`.
+- Écart : `lsp-probe.test.ts` et les autres tests énumérant les ids n'ont pas eu besoin d'adaptation (aucune énumération exhaustive de `LANGUAGE_SERVER_IDS`).
+- Valeurs provisoires T03 : install `composer global require phpactor/phpactor` / `npm install -g intelephense` ; `initializationOptions: {}` pour T04.
+- `check:code-quality:changed` exige une base : `origin/main` absent du clone, lancer avec `ORCA_CODE_QUALITY_BASE=HEAD` (ou un SHA) pour les tâches suivantes.
+- T02 : l'UI Ruby est codée en dur, rien ne montre PHP tant que la section n'est pas générique.
