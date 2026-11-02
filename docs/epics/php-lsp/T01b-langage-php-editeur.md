@@ -22,3 +22,9 @@ Trou du plan relevé en T06 : `LSP_LANGUAGE_IDS` (`src/renderer/src/lib/lsp/lsp-
 
 ## Commit
 `feat(lsp): sync PHP editor models with the language server`
+
+## Notes de sortie
+- `'php'` ajouté à `LSP_LANGUAGE_IDS` (`lsp-document-sync.ts`) : modèles `php` synchronisés et providers enregistrés pour `php`.
+- Plan confirmé : le repli TS (`lsp-typescript-worker-fallback.ts`) renvoie déjà `null` pour tout langage autre que typescript/javascript, donc aucun changement dans `lsp-navigation-providers.ts`. `lsp-workspace-symbol-lookup.ts` (`LOOKUP_LANGUAGES`) et `lsp-semantic-tokens.ts` énumèrent `ruby` en dur : volontairement non touchés (hors périmètre V1 : workspace/symbol PHP et coloration sémantique), à voir en T04/T05 si besoin.
+- Tests ajoutés (aucun test existant modifié) : sync d'un modèle `php`, enregistrement des 3 providers pour `php`, hover/definition/references `php` sans client renvoient `null` sans appeler le worker TS.
+- Vérifs : `pnpm tc`, `pnpm test src/renderer/src/lib/lsp` (67 tests), gate qualité, `pnpm format` verts.

@@ -91,6 +91,25 @@ describe('LspDocumentSync', () => {
     })
   })
 
+  it('syncs php models with a php server', async () => {
+    const client = fakeClient()
+    const getClient = vi.fn().mockResolvedValue(client)
+    const sync = new LspDocumentSync({ ...leases(), findOwner: () => owner, getClient })
+    const m = model('file:///repo/a.php', 'php')
+    sync.track(m)
+    expect(sync.isTracked(m)).toBe(true)
+    await sync.clientFor(m)
+    expect(getClient).toHaveBeenCalledWith(owner.worktreeId, 'php')
+    expect(client.notify).toHaveBeenCalledWith('textDocument/didOpen', {
+      textDocument: {
+        uri: 'file:///repo/a.php',
+        languageId: 'php',
+        version: 1,
+        text: 'const a = 1'
+      }
+    })
+  })
+
   it('replays didOpen when the session reconnects', async () => {
     const first = fakeClient()
     const second = fakeClient()
