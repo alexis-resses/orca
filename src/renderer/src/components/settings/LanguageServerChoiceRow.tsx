@@ -7,7 +7,11 @@ import { SettingsRow } from './SettingsFormControls'
 import { LanguageServerInstallPanel } from './LanguageServerInstallPanel'
 import { LanguageServerStatus } from './LanguageServerStatus'
 import { useAppStore } from '@/store'
-import { installAppliesToShell, installShellFamily } from './language-server-install-command'
+import {
+  installAppliesToShell,
+  installShellFamily,
+  resolveInstallShell
+} from './language-server-install-command'
 import { LANGUAGE_SERVER_CATALOG } from '../../../../shared/language-server-catalog'
 import type {
   LanguageServerId,
@@ -78,7 +82,10 @@ export function LanguageServerChoiceRow({
     choiceEntry?.kind === 'external' &&
     installAppliesToShell(
       choiceEntry.installShells,
-      installShellFamily(windowsShell, navigator.userAgent.includes('Windows'))
+      installShellFamily(
+        resolveInstallShell(repoPath, windowsShell),
+        navigator.userAgent.includes('Windows')
+      )
     )
   const showInstall =
     installing !== null && !(finishedCode === null && choiceProbe?.status === 'installed')
