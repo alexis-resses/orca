@@ -57,7 +57,8 @@ TODO (Alexis): before/after of the Language Servers section with the PHP row, an
 | Chained method without `@return` or type | not resolved | resolved |
 | Dynamic call `$obj->$method()` | not resolved | not resolved |
 
-- Platforms: Linux (Ubuntu on WSL2), unit + e2e. Windows: TODO (Alexis).
+- Real projects (headless, catalog options): `symfony/demo` with `vendor/` and WordPress; timings, memory and per-gesture results in the epic notes. Intelephense is the better default on both; Phpactor uses less memory at rest.
+- Platforms: Linux (Ubuntu on WSL2), unit + e2e + manual check in the app. Windows: TODO (Alexis).
 - `pnpm tc`, `check:code-quality:changed`, `check:max-lines-ratchet` and the localization checks pass. `lsp-session.test.ts`, `remote-snapshot-alt-screen-host-chain.test.ts` and some `src/main/ipc` pty tests are load-sensitive in the full parallel run and pass alone (same as noted in #24703).
 
 - [ ] I manually tested these changes locally
@@ -78,5 +79,5 @@ Start with `src/shared/language-server-catalog.ts` (the PHP entries and why each
 ## Notes
 
 - **Security:** nothing new spawns without the existing per-project opt-in; the probe no longer runs anything for Intelephense. The Phpactor PHAR has no published checksum or signature, so the download is trusted like `gem install` / `npm -g`. No Intelephense licence key is stored.
-- **Known limits:** dynamic calls are not resolved by either server; Intelephense has no server-side memory cap (`maxMemory` is a VS Code client setting; a custom command can pass `--max-old-space-size`); each worktree builds its own index (sharing one is unsafe: absolute paths, no writer lock). The exclusion lists repeat each server's defaults because they replace them.
+- **Known limits:** Phpactor exits neither on stdin EOF nor when its parent `processId` dies, so after an Orca crash (not a normal quit, which stops it cleanly) a Phpactor process can linger on native hosts; Intelephense exits on EOF. Phpactor can resolve a definition into a copy embedded in a PHAR under `vendor/` (seen with `EventSubscriberInterface` via `maker-bundle`'s `php-cs-fixer.phar`), which Orca cannot open. Dynamic calls are not resolved by either server; Intelephense has no server-side memory cap (`maxMemory` is a VS Code client setting; a custom command can pass `--max-old-space-size`); each worktree builds its own index (sharing one is unsafe: absolute paths, no writer lock). The exclusion lists repeat each server's defaults because they replace them.
 - **Cross-platform / SSH:** remote hosts are unchanged (still no spawning). WSL repos are the follow-up PR.
