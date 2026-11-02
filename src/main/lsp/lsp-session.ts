@@ -1,4 +1,4 @@
-import { basename } from 'node:path'
+import { basename, win32 } from 'node:path'
 import { pathToFileURL } from 'node:url'
 import { StreamMessageReader, StreamMessageWriter } from 'vscode-jsonrpc/node'
 import { spawnProcess } from '@orca/process-host'
@@ -14,8 +14,9 @@ import {
   LSP_SEMANTIC_TOKEN_TYPES
 } from '../../shared/lsp-semantic-token-legend'
 import { LspMessageRouter, isJsonRpcMessage, type JsonRpcMessage } from './lsp-message-router'
-import type { ResolvedLspCommand } from './lsp-server-command'
+import type { ResolvedLspCommand, ResolvedLspServer } from './lsp-server-command'
 import { LspStderrTail } from './lsp-stderr-tail'
+import { createWslUriMapper, type WslUriMapper } from './lsp-wsl-uri-mapper'
 
 export type LspPort = {
   post(message: unknown): void
@@ -28,6 +29,7 @@ export type LspSessionConfig = {
   serverId: LanguageServerId
   rootPath: string
   command: ResolvedLspCommand
+  wsl?: ResolvedLspServer['wsl']
   initializationOptions: unknown
   idleShutdownMs: number
   onExit: (unexpected: boolean) => void
@@ -52,6 +54,7 @@ export class LspSession {
   private readonly queued: { portId: number; message: JsonRpcMessage }[] = []
   private readonly exitedPromise: Promise<void>
   private readonly stderr: LspStderrTail
+  private readonly uriMapper: WslUriMapper | null
   private nextPortId = 1
   private isReady = false
   private exited = false
@@ -61,11 +64,15 @@ export class LspSession {
   private idleTimer: ReturnType<typeof setTimeout> | null = null
 
   constructor(private readonly config: LspSessionConfig) {
-    const rootUri = pathToFileURL(config.rootPath).toString()
+    // Why: bundled servers run on Windows and read UNC paths as-is; only in-distro servers need Linux URIs.
+    this.uriMapper = config.wsl ? createWslUriMapper(config.rootPath) : null
+    const workspaceFolder = this.uriMapper
+      ? { uri: this.uriMapper.clientRootUri, name: win32.basename(config.rootPath) }
+      : { uri: pathToFileURL(config.rootPath).toString(), name: basename(config.rootPath) }
     this.child = (config.spawn ?? spawnProcess)({
       program: config.command.program,
       args: config.command.args,
-      cwd: config.rootPath,
+      cwd: config.command.cwd ?? config.rootPath,
       env: config.command.env,
       // Why: own process group for tree kill; piped stdin still makes the server exit on EOF if Orca dies.
       detached: process.platform !== 'win32',
@@ -73,8 +80,9 @@ export class LspSession {
     })
     const writer = new StreamMessageWriter(this.child.stdin)
     this.router = new LspMessageRouter(
-      (message) => void writer.write(message).catch(() => undefined),
-      [{ uri: rootUri, name: basename(config.rootPath) }],
+      (message) =>
+        void writer.write(this.uriMapper?.toServer(message) ?? message).catch(() => undefined),
+      [workspaceFolder],
       workspaceConfigurationFor(config.serverId)
     )
     new StreamMessageReader(this.child.stdout).listen((message) => this.onServerMessage(message))
@@ -94,7 +102,7 @@ export class LspSession {
         }
       })
     })
-    this.ready = this.initialize(rootUri)
+    this.ready = this.initialize(workspaceFolder)
     this.ready.catch((error: unknown) => {
       if (!this.disposing) {
         this.failed = true
@@ -154,12 +162,13 @@ export class LspSession {
     this.config.onExit(this.failed)
   }
 
-  private async initialize(rootUri: string): Promise<void> {
+  private async initialize(workspaceFolder: { uri: string; name: string }): Promise<void> {
     const result = await withTimeout(
       this.router.request('initialize', {
-        processId: process.pid,
-        rootUri,
-        workspaceFolders: [{ uri: rootUri, name: basename(this.config.rootPath) }],
+        // Why: the Windows PID does not exist inside the distro and servers watching it would exit.
+        processId: this.config.wsl ? null : process.pid,
+        rootUri: workspaceFolder.uri,
+        workspaceFolders: [workspaceFolder],
         initializationOptions: this.config.initializationOptions,
         capabilities: {
           textDocument: {
@@ -207,7 +216,7 @@ export class LspSession {
     if (!isJsonRpcMessage(message)) {
       return
     }
-    const routed = this.router.fromServer(message)
+    const routed = this.router.fromServer(this.uriMapper?.toClient(message) ?? message)
     if (routed) {
       this.ports.get(routed.portId)?.post(routed.message)
     }

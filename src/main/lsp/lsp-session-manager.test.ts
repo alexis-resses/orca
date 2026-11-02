@@ -71,6 +71,22 @@ describe('LspSessionManager', () => {
     expect(created).toHaveLength(1)
   })
 
+  it('passes the WSL launch info of the resolved server to the session', async () => {
+    const wsl = { distro: 'Ubuntu', linuxRoot: '/home/me/proj' }
+    const command = { program: 'wsl.exe', args: [], env: {}, cwd: 'C:\\Windows' }
+    const { manager, created } = setup({
+      resolveCommand: async () => ({ command, initializationOptions: null, wsl })
+    })
+    await manager.acquire({ worktreeId: 'r1::/repo', languageId: 'ruby' })
+    expect(created[0]?.config).toMatchObject({ command, wsl })
+  })
+
+  it('creates native sessions without WSL launch info', async () => {
+    const { manager, created } = setup()
+    await manager.acquire({ worktreeId: 'r1::/repo', languageId: 'ruby' })
+    expect(created[0]?.config.wsl).toBeUndefined()
+  })
+
   it('reports unavailable when the server binary is missing', async () => {
     const { manager } = setup({ resolveCommand: async () => null })
     expect(await manager.acquire({ worktreeId: 'r1::/repo', languageId: 'ruby' })).toEqual({

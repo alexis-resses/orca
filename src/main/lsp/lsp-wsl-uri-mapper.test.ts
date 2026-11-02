@@ -50,6 +50,15 @@ describe('createWslUriMapper', () => {
   })
 })
 
+describe('clientRootUri', () => {
+  it('is the UNC root URI with the share and distro casing of the root path', () => {
+    expect(mapper().clientRootUri).toBe('file://wsl.localhost/Ubuntu/home/me/proj')
+    expect(mapper('\\\\WSL$\\ubuntu\\home\\me\\proj\\').clientRootUri).toBe(
+      'file://wsl%24/ubuntu/home/me/proj'
+    )
+  })
+})
+
 describe('toServer', () => {
   it.each([
     ['initialize rootUri', request({ rootUri: CLIENT_FILE }), { rootUri: SERVER_FILE }],
