@@ -190,22 +190,23 @@ function buildGuestArgv(
   return withGuestCwd(spec.cwd, argv)
 }
 
-/**
- * Run a program inside WSL.
- *
- * A missing login PATH is never fatal: the call runs on the distro's default
- * PATH and reports `environmentResolved: false`. Every knob this file used to
- * carry -- cooldown tiers, budget splitting, a re-probe heuristic, an opt-out
- * flag on 19 of 23 sites -- existed only because that case used to throw.
- */
-export async function runWslProcess(spec: WslSpec): Promise<WslResult> {
+export type WslSpawnCommand = {
+  program: string
+  args: string[]
+  cwd: string | undefined
+  env: NodeJS.ProcessEnv
+  /** Script payload to write to stdin when the argv form exceeds the command-line budget. */
+  input?: string
+  environmentResolved: boolean
+}
+
+async function prepareWslSpawn(spec: WslSpec, deadline: number): Promise<WslSpawnCommand> {
   if (spec.program !== undefined) {
     assertNotShellString(spec.program)
   }
   if (spec.cwd) {
     assertGuestPath(spec.cwd)
   }
-  const deadline = Date.now() + (spec.timeoutMs ?? DEFAULT_WSL_TIMEOUT_MS)
 
   const wantsEnvironment = spec.loginPath === 'preferred'
   // Cap the probe at half the budget and at 4s: a 5s caller was giving the
@@ -241,10 +242,7 @@ export async function runWslProcess(spec: WslSpec): Promise<WslResult> {
       : 'argv'
   const argv = delivery === 'argv' ? argvForm : buildGuestArgv(environment, spec, 'stdin')
 
-  // One budget for the whole call: the probe used to run on its own 10s timer
-  // ahead of the timed leg, so a 5s caller could wait 15s.
-  const remainingMs = Math.max(1, deadline - Date.now())
-  const result = await runProcess({
+  return {
     program: resolveWslExecutablePath(),
     args: buildWslExecArgs(spec.distro, argv, { user: spec.user }),
     // Name a Windows directory rather than inheriting one: an inherited cwd that
@@ -253,12 +251,42 @@ export async function runWslProcess(spec: WslSpec): Promise<WslResult> {
     cwd: resolveWslInteropSpawnCwd(),
     env: buildHostEnv(spec.env),
     input: delivery === 'stdin' ? spec.script : undefined,
+    environmentResolved: !wantsEnvironment || environment !== null
+  }
+}
+
+/** Spawn description for a long-lived guest process (the caller owns the spawn and its lifetime). */
+export function buildWslSpawnCommand(spec: WslSpec): Promise<WslSpawnCommand> {
+  return prepareWslSpawn(spec, Date.now() + (spec.timeoutMs ?? DEFAULT_WSL_TIMEOUT_MS))
+}
+
+/**
+ * Run a program inside WSL.
+ *
+ * A missing login PATH is never fatal: the call runs on the distro's default
+ * PATH and reports `environmentResolved: false`. Every knob this file used to
+ * carry -- cooldown tiers, budget splitting, a re-probe heuristic, an opt-out
+ * flag on 19 of 23 sites -- existed only because that case used to throw.
+ */
+export async function runWslProcess(spec: WslSpec): Promise<WslResult> {
+  const deadline = Date.now() + (spec.timeoutMs ?? DEFAULT_WSL_TIMEOUT_MS)
+  const command = await prepareWslSpawn(spec, deadline)
+
+  // One budget for the whole call: the probe used to run on its own 10s timer
+  // ahead of the timed leg, so a 5s caller could wait 15s.
+  const remainingMs = Math.max(1, deadline - Date.now())
+  const result = await runProcess({
+    program: command.program,
+    args: command.args,
+    cwd: command.cwd,
+    env: command.env,
+    input: command.input,
     timeoutMs: remainingMs,
     maxOutputBytes: spec.maxOutputBytes
   })
 
   return {
-    environmentResolved: !wantsEnvironment || environment !== null,
+    environmentResolved: command.environmentResolved,
     code: result.code,
     stdout: result.stdout,
     stderr: result.stderr,

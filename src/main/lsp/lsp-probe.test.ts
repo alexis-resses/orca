@@ -22,6 +22,13 @@ function deps(overrides: Partial<LspProbeDeps> = {}): LspProbeDeps {
       stderr: '',
       timedOut: false
     })),
+    runWsl: vi.fn(async () => ({
+      environmentResolved: true,
+      code: 0,
+      stdout: 'Phpactor 2026.10.07.0\n',
+      stderr: '',
+      timedOut: false
+    })),
     ...overrides
   }
 }
@@ -92,5 +99,106 @@ describe('probeRepoLanguageServers', () => {
     expect(d.resolveOnPath).not.toHaveBeenCalledWith('bundle', expect.anything())
     expect(d.run).toHaveBeenCalledTimes(1)
     expect(d.run).not.toHaveBeenCalledWith(expect.objectContaining({ program: '/shims/bundle' }))
+  })
+
+  describe('repo inside a WSL distro', () => {
+    const wslRepo: Repo = {
+      ...repo,
+      path: '\\\\wsl.localhost\\Ubuntu\\home\\u\\app',
+      languageServers: { enabled: { phpactor: true, intelephense: true } }
+    }
+
+    it('runs the version command inside the distro and never on the Windows side', async () => {
+      const d = deps({ resolveOnPath: vi.fn(async () => null) })
+      const result = await probeRepoLanguageServers(
+        { ...wslRepo, languageServers: { enabled: { phpactor: true } } },
+        d
+      )
+      expect(result.phpactor).toEqual({ status: 'installed', version: 'Phpactor 2026.10.07.0' })
+      expect(d.runWsl).toHaveBeenCalledWith({
+        distro: 'Ubuntu',
+        program: 'phpactor',
+        args: ['language-server', '--version'],
+        cwd: '/home/u/app',
+        loginPath: 'preferred',
+        timeoutMs: 10_000,
+        maxOutputBytes: 64 * 1024
+      })
+      expect(d.run).not.toHaveBeenCalled()
+      expect(d.resolveOnPath).not.toHaveBeenCalled()
+    })
+
+    it('reports missing when the command fails in the distro', async () => {
+      const result = await probeRepoLanguageServers(
+        wslRepo,
+        deps({
+          runWsl: async () => ({
+            environmentResolved: true,
+            code: 127,
+            stdout: '',
+            stderr: 'not found',
+            timedOut: false
+          })
+        })
+      )
+      expect(result.phpactor).toEqual({ status: 'missing' })
+    })
+
+    it('reports missing when wsl.exe cannot be spawned', async () => {
+      const result = await probeRepoLanguageServers(
+        wslRepo,
+        deps({
+          runWsl: async () => {
+            throw new Error('spawn wsl.exe ENOENT')
+          }
+        })
+      )
+      expect(result.phpactor).toEqual({ status: 'missing' })
+    })
+
+    it('checks a server without a version flag with command -v in the distro', async () => {
+      const d = deps({
+        runWsl: vi.fn(async () => ({
+          environmentResolved: true,
+          code: 0,
+          stdout: '/home/u/.nvm/bin/intelephense\n',
+          stderr: '',
+          timedOut: false
+        }))
+      })
+      const result = await probeRepoLanguageServers(wslRepo, d)
+      expect(result.intelephense).toEqual({ status: 'installed', version: '' })
+      expect(d.runWsl).toHaveBeenCalledWith(
+        expect.objectContaining({
+          distro: 'Ubuntu',
+          script: 'command -v "$1"',
+          args: ['intelephense'],
+          cwd: '/home/u/app',
+          loginPath: 'preferred'
+        })
+      )
+    })
+
+    it('reports a server without a version flag as missing when command -v fails', async () => {
+      const result = await probeRepoLanguageServers(
+        wslRepo,
+        deps({
+          runWsl: async () => ({
+            environmentResolved: true,
+            code: 1,
+            stdout: '',
+            stderr: '',
+            timedOut: false
+          })
+        })
+      )
+      expect(result.intelephense).toEqual({ status: 'missing' })
+    })
+
+    it('does not run a server that is not enabled', async () => {
+      const d = deps()
+      await probeRepoLanguageServers({ ...wslRepo, languageServers: { enabled: {} } }, d)
+      expect(d.runWsl).not.toHaveBeenCalled()
+    })
   })
 })

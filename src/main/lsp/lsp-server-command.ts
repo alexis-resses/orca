@@ -7,11 +7,22 @@ import type {
   LanguageServerId,
   RepoLanguageServerSettings
 } from '../../shared/language-server-types'
+import { parseWslUncPath } from '../../shared/wsl-paths'
+import { buildWslSpawnCommand, type WslSpawnCommand, type WslSpec } from '../wsl/wsl-runner'
 import { resolveLoginShellEnvironment } from '../startup/login-shell-environment'
 import { resolveCommandOnLocalPath, type ResolveCommandOptions } from '../ipc/command-path-resolver'
 
-export type ResolvedLspCommand = { program: string; args: string[]; env: NodeJS.ProcessEnv }
-export type ResolvedLspServer = { command: ResolvedLspCommand; initializationOptions: unknown }
+export type ResolvedLspCommand = {
+  program: string
+  args: string[]
+  env: NodeJS.ProcessEnv
+  cwd?: string
+}
+export type ResolvedLspServer = {
+  command: ResolvedLspCommand
+  initializationOptions: unknown
+  wsl?: { distro: string; linuxRoot: string }
+}
 
 export type LspServerCommandDeps = {
   platform: NodeJS.Platform
@@ -19,6 +30,7 @@ export type LspServerCommandDeps = {
   resolveOnPath: (command: string, options: ResolveCommandOptions) => Promise<string | null>
   fileExists: (path: string) => Promise<boolean>
   bundledTypescriptPaths: () => { cliPath: string; tsserverPath: string }
+  buildWslSpawn: (spec: WslSpec) => Promise<WslSpawnCommand>
 }
 
 const requireFromMain = createRequire(__filename)
@@ -52,7 +64,8 @@ const defaultDeps: LspServerCommandDeps = {
       join(installedPackageDir('typescript-language-server'), 'lib', 'cli.mjs')
     ),
     tsserverPath: unpackedPath(join(installedPackageDir('typescript-6'), 'lib', 'tsserver.js'))
-  })
+  }),
+  buildWslSpawn: buildWslSpawnCommand
 }
 
 export async function resolveLspServerCommand(
@@ -77,6 +90,24 @@ export async function resolveLspServerCommand(
     }
   }
   const [name, ...args] = settings?.command?.[serverId] ?? entry.defaultCommand
+  const wslRoot = parseWslUncPath(rootPath)
+  if (wslRoot) {
+    if (!name) {
+      return null
+    }
+    const spawn = await deps.buildWslSpawn({
+      distro: wslRoot.distro,
+      program: name,
+      args,
+      cwd: wslRoot.linuxPath,
+      loginPath: 'preferred'
+    })
+    return {
+      command: { program: spawn.program, args: spawn.args, env: spawn.env, cwd: spawn.cwd },
+      initializationOptions: entry.initializationOptions,
+      wsl: { distro: wslRoot.distro, linuxRoot: wslRoot.linuxPath }
+    }
+  }
   const env = await deps.loginShellEnv()
   // Why: version-manager shims pick the project's Ruby from cwd, and win32 needs an absolute program.
   const program = await deps.resolveOnPath(name, { env, cwd: rootPath, platform: deps.platform })
