@@ -28,3 +28,10 @@ Remplacer le sélecteur Ruby codé en dur par une ligne par langage, générée 
 
 ## Commit
 `refactor(lsp): drive language server settings rows from the catalog`
+
+## Notes de sortie
+- Fait : section générique pilotée par le catalogue ; PHP (Phpactor/Intelephense) visible et activable à côté de Ruby. Clé `php` dans les 6 locales + `en-runtime-required.json`, mots-clés de recherche (php, phpactor, intelephense, composer require) ; 3 tests PHP + 1 test de recherche ajoutés, tests Ruby inchangés.
+- Composant de ligne : `LanguageServerChoiceRow` dans `src/renderer/src/components/settings/LanguageServerChoiceRow.tsx` (props : `languageId`, `label`, `serverIds`, `settings`, `probe`, `isLocal`, `onChoose`, `onSaveCommand`, `onProbeStale`) ; il porte l'état d'installation. Groupes dérivés par `getLanguageServerChoiceGroups()` (`language-server-choice-groups.ts`), badge de statut extrait dans `LanguageServerStatus.tsx`.
+- Écart : le libellé du langage reste un `switch` statique (`languageLabel`, ruby/php) dans la section, car les clés i18n doivent rester des littéraux ; un futur langage = un `case` + une clé.
+- T03 : `LanguageServerInstallPanel` consomme déjà `installCommand`/`updateCommand` du catalogue (test d'install PHP vérifié avec `composer global require phpactor/phpactor`) ; seules les valeurs du catalogue sont à ajuster.
+- T09b : le garde d'hôte est la prop `isLocal` de la ligne ; pour activer les repos WSL, ne changer que son calcul dans `RepositoryLanguageServersSection.tsx`.
