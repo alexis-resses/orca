@@ -19,3 +19,9 @@ README de l'EPIC (sections « Décisions » et « Constats »), `AGENTS.md` (sec
 
 ## Commit
 `docs(lsp): upstream coordination notes`
+
+## Notes de sortie
+
+- Deux textes prêts dans `T00b-messages.md` (anglais, courts, sans délai promis), à publier par Alexis.
+- Contradiction relevée : la description de la PR #24703 annonce `unsupported-host` pour WSL, mais le code (`lsp-probe.ts:63`, `lsp-session-manager.ts:64`) ne teste que `getRepoExecutionHostId(repo) !== 'local'`, et `execution-host.ts` n'a que les types `local` / `ssh` / `runtime` (WSL = `local` + `wslDistro`). Posée comme question à MTEKode ; le comportement réel reste à constater en T06.
+- **En attente** : publication, puis résumé des réponses ici ; mettre à jour le README si une décision change (D6 notamment : PR sur sa branche ou après fusion).
