@@ -1,8 +1,9 @@
 # PR 2 — `feat/lsp-wsl` (à ouvrir par Alexis, après la PR 1)
 
 - **Branche** : `alexis-resses:feat/lsp-wsl` (4 commits au-dessus de `feat/lsp-php`, sans `docs/epics/`).
-- **Base** : `feat/lsp-php` tant que la PR 1 n'est pas fusionnée (PR empilée), puis `main`.
-- **À compléter avant ouverture** : captures, et surtout la validation manuelle Windows → WSL (check-list en bas de `T09b-reglages-wsl.md`, résultats de T10).
+- **Base** : `stablyai/orca:main`, après la PR 1 ; ouverte avant sa fusion = PR empilée (voir ci-dessous).
+- **Avant ouverture** : ouvrir l'issue 2 de `T11-issues.md` et remplacer `#WSL_ISSUE` ; captures ; surtout la validation manuelle Windows → WSL (check-list en bas de `T09b-reglages-wsl.md`), sans laquelle cette PR reste en draft.
+- **Base GitHub** : une PR ne peut cibler qu'une branche du dépôt amont ; tant que la PR 1 n'est pas fusionnée, ouvrir en **draft** vers `main` avec en tête : `> Stacked on #PHP_PR (itself on #24703). Please review only the last 4 commits.`
 
 ---
 
@@ -37,7 +38,9 @@ On Windows, projects that live inside WSL (`\\wsl.localhost\Ubuntu\...`) can now
 
 ## Linked Issue
 
-Part of #5247. Builds on the PHP PR and #24703.
+Fixes #WSL_ISSUE
+
+Part of #5247. Builds on #PHP_PR and #24703.
 
 ## Visual Proof
 
@@ -49,6 +52,8 @@ TODO (Alexis): F12 from a Symfony controller in a WSL repo into a `vendor/` clas
 - Session test against a real child process: a WSL-shaped session sends Linux URIs to the server (initialize, didOpen, didClose on detach, workspaceFolders reply) and returns UNC URIs (definition, references, workspace/symbol), spawns from the resolved cwd and sends `processId: null`; native sessions are asserted unchanged.
 - Manual, through `wsl.exe` from the distro: the produced argv starts Phpactor (`Phpactor 2026.10.07.0`) and finds Intelephense on the login PATH; killing `wsl.exe` kills the guest process.
 - Platforms: Linux (Ubuntu on WSL2) for unit tests. Windows → WSL in the app: TODO (Alexis).
+
+- Full `pnpm lint`: clean on every file this PR touches. Two failures already exist at the base `215cbee` and are not from this PR: `anti-slop(no-object-parameters)` in `src/renderer/src/lib/lsp/lsp-navigation-providers.ts:27` (from #24703) and the focus-read ratchet in `src/renderer/src/lib/worktree-creation-ready-toast.tsx`. `pnpm build`: desktop build passes; the mobile web bundle was not built locally (mobile dependencies not installed), CI covers it.
 
 - [ ] I manually tested these changes locally
 - [x] Automated tests added/updated, or explained why not below
@@ -70,3 +75,17 @@ Start with `src/main/lsp/lsp-wsl-uri-mapper.ts`, then `src/main/lsp/lsp-session.
 - **Security:** argv and cwd reach the guest as positional arguments of a fixed wrapper, never interpolated; existing `wsl-runner` guards apply.
 - **Known limits:** `file:///home/...` links inside hover Markdown are not translated; a command override on a WSL repo is not checked for presence before spawn (a missing binary shows up as an immediate exit, then the usual crash budget).
 - **Native and SSH repos:** unchanged.
+- **Mobile / backwards compatibility:** no mobile or wire change; WSL repos that had no server enabled behave as before.
+
+## Author
+
+X (Twitter): TODO (Alexis, optional)
+
+## Checklist
+
+- [x] This PR is small and focused
+- [x] I explained what changed and why (ELI5, the user-facing before/after, the mechanism, and why over the alternatives)
+- [ ] Before/after screenshots or videos attached for UI changes, or `N/A` with reason
+- [x] Self-reviewed for correctness, security, and performance
+- [x] Cross-platform, SSH/remote, and path/shortcut impact considered (or N/A)
+- [ ] `pnpm lint`, `pnpm typecheck`, `pnpm test`, and `pnpm build` pass (or CI will cover; local preferred) — see Testing: pre-existing base failures

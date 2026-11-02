@@ -24,3 +24,23 @@ Pas de commit de code ; la PR est ouverte par Alexis.
 - `feat/lsp-php` (6 commits : T01, T02, T01b, T03, T04, T05) et `feat/lsp-wsl` (4 commits : T07, T08, T09a, T09b) poussées sur le fork, sans `docs/epics/` ; messages et auteurs d'origine conservés. Code de `feat/lsp-wsl` identique à `feat/php-lsp` hors `docs/epics/`.
 - Vérifié depuis `215cbee` : `feat/lsp-php` seule → `pnpm tc` vert, 1 732 tests verts (lsp, settings, terminal), `check:code-quality:changed` vert ; `feat/lsp-wsl` → qualité, `check:max-lines-ratchet` et contrôles i18n verts.
 - Textes de PR prêts : `T11-pr-php.md`, `T11-pr-wsl.md` (TODO Alexis : captures, test Windows, base de PR selon la réponse de MTEKode).
+
+## Ouverture selon la réponse amont
+
+Veille quotidienne : routine cloud `orca-php-lsp-veille-amont` (9 h 03 Paris).
+
+| Situation | Action |
+|---|---|
+| #24703 fusionnée | Rebase (commandes ci-dessus), relancer les vérifications, ouvrir les issues de `T11-issues.md`, puis PR 1 vers `main` (ready), PR 2 en draft empilée jusqu'à fusion de la PR 1. |
+| MTEKode accepte une PR vers sa branche | PR 1 vers `MTEKode:MTEKode/lsp-navigation` (diff propre, 6 commits) ; PR 2 après. |
+| MTEKode préfère que PHP attende | Garder les branches, rebaser à la fusion. |
+| **Pas de réponse au 2026-11-09** (une semaine) | Ouvrir l'issue 1, puis PR 1 en **draft** vers `stablyai/orca:main` avec la mention « Stacked on #24703 » ; repasser en ready après fusion + rebase. PR 2 seulement après validation Windows → WSL. |
+
+Pourquoi draft sans réponse : le diff inclut les commits de #24703 tant qu'elle n'est pas fusionnée ; une PR ready ferait relire deux fois le même code. En draft, la CI ne lance qu'une sélection de tests unitaires.
+
+## Vérifications complètes (2026-11-02)
+
+| Contrôle | Résultat |
+|---|---|
+| `pnpm lint` (toutes étapes) | Vert sur nos fichiers. 2 échecs déjà présents sur `215cbee` : anti-slop `lsp-navigation-providers.ts:27` (code de #24703) et focus-read ratchet `worktree-creation-ready-toast.tsx`. Hors périmètre, non corrigés. |
+| `pnpm build` | Desktop OK ; bundle web mobile non construit (dépendances `mobile/` absentes du clone). |

@@ -1,8 +1,9 @@
 # PR 1 — `feat/lsp-php` (à ouvrir par Alexis)
 
 - **Branche** : `alexis-resses:feat/lsp-php` (6 commits, sans `docs/epics/`).
-- **Base** : `stablyai/orca:main` une fois #24703 fusionnée ; d'ici là, la tête de #24703 (`215cbee`), donc soit une PR vers `MTEKode:MTEKode/lsp-navigation` si MTEKode est d'accord (question posée en T00b), soit attendre la fusion puis rebaser.
-- **À compléter avant ouverture** : captures avant / après (section Visual Proof), plateformes réellement testées par Alexis (Windows natif), et le numéro d'issue définitif.
+- **Base** : voir « Ouverture selon la réponse amont » dans `T11-amont.md` (fusion de #24703, accord de MTEKode, ou PR draft empilée sans réponse).
+- **Avant ouverture** : ouvrir l'issue 1 de `T11-issues.md` et remplacer `#PHP_ISSUE` ; captures avant / après (Visual Proof) ; test Windows natif (Testing + case « manually tested ») ; handle X facultatif.
+- **Si PR empilée sur #24703 (pas encore fusionnée)** : ouvrir en **draft** et ajouter en tête de description : `> Stacked on #24703: the first commits are that PR's. Please review only the 6 commits after 215cbee. I will rebase onto main once it merges.`
 
 ---
 
@@ -36,6 +37,8 @@ Orca's editor can now jump to definitions, list references and show hover docs i
 
 ## Linked Issue
 
+Fixes #PHP_ISSUE
+
 Part of #5247 (cross-file go to definition). Builds on #24703 (Fixes #24702).
 
 ## Visual Proof
@@ -61,6 +64,8 @@ TODO (Alexis): before/after of the Language Servers section with the PHP row, an
 - Platforms: Linux (Ubuntu on WSL2), unit + e2e + manual check in the app. Windows: TODO (Alexis).
 - `pnpm tc`, `check:code-quality:changed`, `check:max-lines-ratchet` and the localization checks pass. `lsp-session.test.ts`, `remote-snapshot-alt-screen-host-chain.test.ts` and some `src/main/ipc` pty tests are load-sensitive in the full parallel run and pass alone (same as noted in #24703).
 
+- Full `pnpm lint`: clean on every file this PR touches. Two failures already exist at the base `215cbee` and are not from this PR: `anti-slop(no-object-parameters)` in `src/renderer/src/lib/lsp/lsp-navigation-providers.ts:27` (from #24703) and the focus-read ratchet in `src/renderer/src/lib/worktree-creation-ready-toast.tsx`. `pnpm build`: desktop build passes; the mobile web bundle was not built locally (mobile dependencies not installed), CI covers it.
+
 - [ ] I manually tested these changes locally
 - [x] Automated tests added/updated, or explained why not below
 
@@ -81,3 +86,18 @@ Start with `src/shared/language-server-catalog.ts` (the PHP entries and why each
 - **Security:** nothing new spawns without the existing per-project opt-in; the probe no longer runs anything for Intelephense. The Phpactor PHAR has no published checksum or signature, so the download is trusted like `gem install` / `npm -g`. No Intelephense licence key is stored.
 - **Known limits:** Phpactor exits neither on stdin EOF nor when its parent `processId` dies, so after an Orca crash (not a normal quit, which stops it cleanly) a Phpactor process can linger on native hosts; Intelephense exits on EOF. Phpactor can resolve a definition into a copy embedded in a PHAR under `vendor/` (seen with `EventSubscriberInterface` via `maker-bundle`'s `php-cs-fixer.phar`), which Orca cannot open. Dynamic calls are not resolved by either server; Intelephense has no server-side memory cap (`maxMemory` is a VS Code client setting; a custom command can pass `--max-old-space-size`); each worktree builds its own index (sharing one is unsafe: absolute paths, no writer lock). The exclusion lists repeat each server's defaults because they replace them.
 - **Cross-platform / SSH:** remote hosts are unchanged (still no spawning). WSL repos are the follow-up PR.
+- **Mobile / backwards compatibility:** no mobile or wire change; existing Ruby settings are read unchanged by the generic rows.
+- **Localization:** one new optional string (`installNeedsPosixShell`) in the 6 locales.
+
+## Author
+
+X (Twitter): TODO (Alexis, optional)
+
+## Checklist
+
+- [x] This PR is small and focused
+- [x] I explained what changed and why (ELI5, the user-facing before/after, the mechanism, and why over the alternatives)
+- [ ] Before/after screenshots or videos attached for UI changes, or `N/A` with reason
+- [x] Self-reviewed for correctness, security, and performance
+- [x] Cross-platform, SSH/remote, and path/shortcut impact considered (or N/A)
+- [ ] `pnpm lint`, `pnpm typecheck`, `pnpm test`, and `pnpm build` pass (or CI will cover; local preferred) — see Testing: pre-existing base failures
