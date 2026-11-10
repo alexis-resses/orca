@@ -1,5 +1,7 @@
 # Relance sur la PR #24703 (à publier par Alexis)
 
+**Publié le 2026-11-10** par Alexis : https://github.com/stablyai/orca/pull/24703#issuecomment-6764543445 (id 6764543445). Point prévu vendredi 2026-11-13.
+
 Suite du commentaire 6575375881 (T00b). Constats vérifiés le 2026-11-02 : PR `mergeable_state: dirty` (conflit avec `main`), aucun check CI sur `215cbee`, et `pnpm lint` échoue sur son code (`lsp-navigation-providers.ts:27`, règle présente dans sa base, fichier non modifié par l'EPIC). Le texte ci-dessous se colle tel quel.
 
 ---
